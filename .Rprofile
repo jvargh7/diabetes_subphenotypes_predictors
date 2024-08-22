@@ -3,8 +3,6 @@ library(tidyverse)
 duration_cutoff <- 1
 lab_cutoff <- c(0:365)
 
-source("functions/data_extract.R")
-
 if(Sys.info()["user"] == "JGUO258"){
   
   
