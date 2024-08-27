@@ -104,3 +104,4 @@ dppos_selected = bind_rows(
   arrange(type,study_id,age)
 
 saveRDS(dppos_selected,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01d_dppos.RDS"))
+dppos_selected <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01d_dppos.RDS"))
