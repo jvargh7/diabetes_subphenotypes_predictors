@@ -145,6 +145,7 @@ table(aric_events$visit > 1) # 3,716
 
 write_csv(aric_events,paste0(path_diabetes_subphenotypes_adults_folder,"/working/qc/dsppre01a_aric_events from diabetes_subphenotypes_predictors.csv"))
 
+# aric_longitudinal --------------
 
 aric_longitudinal = aric_analysis %>% 
   # Bringing the updated dmagediag from aric_events
