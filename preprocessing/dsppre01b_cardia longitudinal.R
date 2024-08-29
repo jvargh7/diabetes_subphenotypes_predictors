@@ -1,6 +1,6 @@
 rm(list = ls());gc();source(".Rprofile")
-#  --> not there in cardia
-anthro_vars <- c("sbp","dbp","height","wc","bmi",,"hc","triceps","iliac","abdominal","medial")
+# "hc","triceps","iliac","abdominal","medial" --> not there in cardia
+anthro_vars <- c("sbp","dbp","height","wc","bmi")
 #  --> not there in aric
 # ,"ast","alt","uric_acid" --> not there in cardia
 lab_vars <- c("hba1c","insulinf","glucosef","glucose2h","tgl","hdlc","ldlc",
@@ -129,6 +129,8 @@ cardia_longitudinal = cardia_dat_all %>%
   mutate(
     available_labs = rowSums(!is.na(.[,lab_vars])),
     available_anthro = rowSums(!is.na(.[,anthro_vars])))
+
+
 
 # Before dmagediag
 before_dmagediag = join_by(study_id == original_study_id,
