@@ -24,7 +24,11 @@ jhs_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
   ungroup() %>% 
   mutate(diab_v1 = case_when(visit > 1 ~ NA_real_,
                              dmagediag_ever < age ~ 1,
-                             diabetes == 1 | (glucosef >=126 | hba1c >= 6.5) ~ 1,
+                             diabetes == 1 ~ 1,
+                             TRUE ~ 0),
+         diab_new_v1 = case_when(visit > 1 ~ NA_real_,
+                             dmagediag_ever == age ~ 1,
+                             (glucosef >=126 | hba1c >= 6.5) ~ 1,
                              TRUE ~ 0),
          diab_new_v2 = case_when(visit !=2 ~ NA_real_,
                                  dmagediag_ever <= age ~ 1,
@@ -41,7 +45,7 @@ jhs_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
   mutate(earliest_age = min(age,na.rm=TRUE)) %>% 
   ungroup() %>% 
   mutate(dmdiagvisit = case_when(
-    diab_v1 == 1 ~ 1,
+    diab_v1 == 1 | diab_new_v1 == 1 ~ 1,
     diab_new_v2 == 1 ~ 2,
     diab_new_v3 == 1 ~ 3,
     TRUE ~ NA_real_)) %>% 

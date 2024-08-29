@@ -16,7 +16,11 @@ mesa_dat_all <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
                                 TRUE ~ 0),
          
          diab_e1 = case_when(exam > 1 ~ NA_real_,
-                             dia_ada == 2 | dia_sr == 1 | (glucosef >= 126 & !is.na(glucosef)) ~ 1,
+                             dia_sr == 1  ~ 1,
+                             TRUE ~ 0),
+         
+         diab_new_e1 = case_when(exam > 1 ~ NA_real_,
+                             dia_ada == 2 | (glucosef >= 126 & !is.na(glucosef)) ~ 1,
                              TRUE ~ 0),
          
          diab_new_e2 = case_when(exam != 2 ~ NA_real_,
@@ -41,7 +45,7 @@ mesa_dat_all <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
   mutate(earliest_age = min(age,na.rm=TRUE)) %>% 
   ungroup() %>% 
   mutate(dmdiagexam = case_when(
-                                 diab_e1 == 1 ~ 1,
+                                 diab_e1 == 1 | diab_new_e1 == 1 ~ 1,
                                  diab_new_e2 == 1 ~ 2,
                                  diab_new_e3 == 1 ~ 3,
                                  diab_new_e4 == 1 ~ 4,
