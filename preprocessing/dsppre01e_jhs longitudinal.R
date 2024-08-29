@@ -13,7 +13,7 @@ jhs_newdm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/p
 
 
 jhs_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/interim/jhspre01_jhs_analysis.RDS")) %>% 
-  dplyr::filter(jhs == 0) %>%
+  dplyr::filter(aric == 0) %>%
   arrange(study_id,visit)  %>% 
   group_by(study_id) %>% 
   # Self-reported diabetes carried forward as 1 if 1
@@ -97,13 +97,13 @@ jhs_longitudinal_newdm = jhs_longitudinal %>%
                rename(dmagediag_cluster = dmagediag),
              by = before_dmagediag) %>% 
   # !is.na(hba1c) -- not collected for most participants
-  dplyr::filter(!is.na(hba1c), !is.na(glucosef),!is.na(bmi)) %>% 
+  dplyr::filter(!is.na(hba1c)|!is.na(glucosef),!is.na(bmi)) %>% 
   mutate(diff_dmagediag = dmagediag - age)
 
 jhs_longitudinal_neverdm = jhs_longitudinal %>% 
   dplyr::filter(is.na(dmagediag)) %>% 
   # !is.na(hba1c) -- not collected for most participants
-  dplyr::filter(!is.na(glucosef),!is.na(bmi)) %>% 
+  dplyr::filter(!is.na(hba1c)|!is.na(glucosef),!is.na(bmi)) %>% 
   # Among study waves where fasting glucose, HbA1c and BMI are measured, get the penultimate (second-to-last) wave
   group_by(study_id) %>% 
   mutate(wave = 1:n()) %>% 

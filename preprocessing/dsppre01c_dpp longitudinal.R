@@ -73,7 +73,7 @@ dpp_longitudinal_newdm = dpp_longitudinal %>%
   inner_join(dpp_newdm %>% 
                dplyr::select(original_study_id,dmagediag),
              by = before_dmagediag) %>% 
-  dplyr::filter(!is.na(glucosef),!is.na(hba1c),!is.na(bmi)) %>% 
+  dplyr::filter(!is.na(hba1c)|!is.na(glucosef),!is.na(bmi)) %>% 
   mutate(diff_dmagediag = dmagediag - age)
 
 dpp_longitudinal_neverdm = dpp_longitudinal %>% 
@@ -81,7 +81,7 @@ dpp_longitudinal_neverdm = dpp_longitudinal %>%
   mutate(ever_diabf = sum(diabf,na.rm=TRUE)) %>% 
   ungroup() %>% 
   dplyr::filter(ever_diabf == 0) %>% 
-  dplyr::filter(!is.na(glucosef),!is.na(hba1c),!is.na(bmi)) %>% 
+  dplyr::filter(!is.na(hba1c)|!is.na(glucosef),!is.na(bmi)) %>% 
   # Among study waves where fasting glucose, HbA1c and BMI are measured, get the penultimate (second-to-last) wave
   group_by(study_id) %>% 
   mutate(wave = 1:n()) %>% 
