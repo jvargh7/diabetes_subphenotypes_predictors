@@ -72,7 +72,7 @@ mesa_events = mesa_dat_all %>%
   mutate(dmagediag = case_when(history_dm == 1 ~ -1,
                                TRUE ~ age)) 
 
-table(mesa_events$dmagediag > 0) # 3,716
+with(mesa_events,table((age-dmagediag) <= 1))
 
 write_csv(mesa_events,paste0(path_diabetes_subphenotypes_adults_folder,"/working/qc/dsppre01f_mesa_events from diabetes_subphenotypes_predictors.csv"))
 

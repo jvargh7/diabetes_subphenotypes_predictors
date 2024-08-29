@@ -153,8 +153,8 @@ aric_events = aric_analysis %>%
                                TRUE ~ age)) 
 
 aric_events %>% 
-  dplyr::filter((age-dmagediag) %in% c(0,1)) %>% 
-  View()
+  dplyr::filter((age-dmagediag) <= 1) %>% 
+  nrow()
 
 
 write_csv(aric_events,paste0(path_diabetes_subphenotypes_adults_folder,"/working/qc/dsppre01a_aric_events from diabetes_subphenotypes_predictors.csv"))

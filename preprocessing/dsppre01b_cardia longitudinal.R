@@ -111,7 +111,7 @@ cardia_events = cardia_dat_all %>%
                                !is.na(dmagediag_locf) ~ dmagediag_locf,
                                TRUE ~ age)) 
 
-with(cardia_events,table(abs(age-dmagediag) <= 1))
+with(cardia_events,table((age-dmagediag) <= 1))
 
 
 write_csv(cardia_events,paste0(path_diabetes_subphenotypes_adults_folder,"/working/qc/dsppre01b_cardia_events from diabetes_subphenotypes_predictors.csv"))

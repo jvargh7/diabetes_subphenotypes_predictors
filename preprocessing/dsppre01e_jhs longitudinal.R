@@ -63,7 +63,7 @@ jhs_events = jhs_analysis %>%
                                !is.na(dmagediag_ever) ~ dmagediag_ever,
                                TRUE ~ age)) 
 
-table(jhs_events$visit > 1) # 3,716
+with(jhs_events,table((age-dmagediag) <= 1))
 
 write_csv(jhs_events,paste0(path_diabetes_subphenotypes_adults_folder,"/working/qc/dsppre01e_jhs_events from diabetes_subphenotypes_predictors.csv"))
 
