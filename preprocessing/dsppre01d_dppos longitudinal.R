@@ -68,12 +68,24 @@ dppos_longitudinal = dppos_demographics  %>%
 # Before dmagediag
 before_dmagediag = join_by(study_id == original_study_id,
                            age < dmagediag)
+
 dppos_longitudinal_newdm = dppos_longitudinal %>% 
   inner_join(dppos_newdm %>% 
               dplyr::select(original_study_id,dmagediag),
              by = before_dmagediag) %>% 
   dplyr::filter(!is.na(hba1c)|!is.na(glucosef),!is.na(bmi)) %>% 
   mutate(diff_dmagediag = dmagediag - age)
+
+
+dppos_newdm %>% 
+  dplyr::filter(!is.na(hba1c)|!is.na(glucosef2),!is.na(bmi)) %>% 
+  nrow()
+
+
+missing_dppos_longitudinal_newdm = dppos_longitudinal %>% 
+
+
+length(unique(dppos_longitudinal_newdm$study_id))
 
 dppos_longitudinal_neverdm = dppos_longitudinal %>% 
   group_by(study_id) %>% 

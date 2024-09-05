@@ -51,18 +51,19 @@ aric_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/work
       visit > 1 ~ NA_real_,
       dmagediag_V3 < age ~ 1,
       (diab_evr==1)~1,
-      TRUE~0),
-    
-    diab_new_v1 = case_when(
-      visit > 1 ~ NA_real_,
-      dmagediag_V3 == age ~ 1,
-      (diab_126_fast==1|diab_ind==1)~1,
       TRUE~0)
   ) %>% 
+  dplyr::filter(diab_v1 == 0) %>% 
   # group_by(study_id) %>% 
   # mutate(diab_v1 = zoo::na.locf(diab_v1)) %>% 
   # ungroup() %>% 
   # dplyr::filter(diab_v1==0) %>% 
+  mutate(diab_new_v1 = case_when(
+           visit > 1 ~ NA_real_,
+           dmagediag_V3 == age ~ 1,
+           (diab_126_fast==1|diab_ind==1)~1,
+           TRUE~0)) %>% 
+  
   mutate(
     
     # VISIT 2 ------
@@ -235,6 +236,10 @@ aric_events_newdm = aric_events %>%
 missing_aric_events = aric_newdm %>% 
   anti_join(aric_events_newdm,
             by=c("original_study_id"="study_id")) # N = 89
+
+aric_analysis_raw <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/interim/aric_analysis.RDS")) %>% 
+  dplyr::filter(study_id == "C004166") %>% 
+  dplyr::select(study_id,age,dmagediag)
 
 View(aric_longitudinal %>% 
        dplyr::select(study_id,visit,contains("age"),diab_v1,contains("diab_new")) %>% 
