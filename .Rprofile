@@ -1,12 +1,9 @@
 library(tidyverse)
+library(openxlsx)
 
 duration_cutoff <- 1
 lab_cutoff <- c(0:365)
 
-if(Sys.info()["user"] == "JGUO258"){
-  
-  
-}
 
 
 if(Sys.info()["user"] == "JVARGH7"){
@@ -28,8 +25,16 @@ if(Sys.info()["user"] == "zhongyuli"){
 
 
 if(Sys.info()["user"] == "JGUO258"){
-  path_diabetes_subphenotypes_youth_folder <- "C:/Users/JGUO258/OneDrive - Emory/Subphenotypes in Youth-onset T2DM"
   cluster_labels = c("MOD","SIRD","MARD","SIDD")
   cluster_colors = c("MOD"="#F8BDA4","SIRD"="#A1C3AC","SIDD"="#ACD9EA","MARD"="#D0ACC9")
+  
+  path_nhanes_ckm_folder <- "C:/Users/JGUO258/OneDrive - Emory/NHANES CKM Cascade"
+  path_g2a_longitudinal_folder <- "C:/Users/JGUO258/OneDrive - Emory/Crossnational Longitudinal Concordance"
   path_diabetes_subphenotypes_predictors_folder <- "C:/Users/JGUO258/OneDrive - Emory/Predictors of Subphenotypes"
+  path_diabetes_subphenotypes_youth_folder <- "C:/Users/JGUO258/OneDrive - Emory/Subphenotypes in Youth-onset T2DM"
+  path_diabetes_subphenotypes_adults_folder <- "C:/Users/JGUO258/OneDrive - Emory/Diabetes Endotypes Project (JV and ZL)"
+  path_g2a_longitudinal_folder <- "C:/Users/JGUO258/OneDrive - Emory/Crossnational Longitudinal Concordance"
+  path_pasc_cmr_folder <- "C:/Users/JGUO258/OneDrive - Emory/PASC Cardiometabolic Risk Factors"
+  path_pasc_diabetes_folder <- "C:/Users/JGUO258/OneDrive - Emory/PASC Diabetes Incidence"
+  path_pasc_subgroups_folder <- "C:/Users/JGUO258/OneDrive - Emory/PASC Subgroups"
 }

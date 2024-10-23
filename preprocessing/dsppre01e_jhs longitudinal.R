@@ -32,7 +32,7 @@ jhs_longitudinal = jhs_analysis %>%
   mutate(
     available_labs = rowSums(!is.na(.[,lab_vars])),
     available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,visit,age,dmagediag,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars))
+  dplyr::select(study_id,visit,age,dmagediag,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),female,race_eth)
 
 
 

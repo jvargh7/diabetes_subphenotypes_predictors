@@ -64,9 +64,12 @@ longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study = "aric") %>% mut
   left_join(clusters %>% 
               dplyr::select(cluster_study_id,original_study_id,cluster,study,female),
             by=c("study"="study","study_id" = "original_study_id")) %>% 
+  # Include only those with cluster data (i.e. bmi and hba1c at diagnosis)
   dplyr::filter(!is.na(cluster_study_id)) %>% 
   mutate(t = age - dmagediag) %>% 
   dplyr::filter(t >= -15, t < 0)
+
+
 
 # Not vectorized yet -- 
 source("C:/code/external/functions/cgm/egfr_ckdepi_2021.R")
