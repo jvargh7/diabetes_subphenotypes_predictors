@@ -6,12 +6,12 @@ rm(list=ls());gc();source(".Rprofile")
 # includes new diagnosed dm + undiagnosed
 mesa_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01f_mesa.RDS"))
 
-# Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5))
+# Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5 | glucosf2 >= 6.993))
 # N = 989
 mesa_dm_all <- mesa_longitudinal %>%
   group_by(study_id) %>% 
   dplyr::filter((!is.na(dmagediag) | 
-                   is.na(dmagediag) & hba1c >= 6.5)) %>%
+                   is.na(dmagediag) & (hba1c >= 6.5 | glucosef2 >= 6.993))) %>%
   ungroup()
 
 # Among diagnosed DM, duration <= 1 year, N = 989
@@ -25,7 +25,7 @@ mesa_dm_newdiag <- mesa_dm_all %>%
 # Identify undiagnosed DM based on A1c. Set agediagnosed_dm = current age, N = 0
 mesa_dm_undiag <- mesa_longitudinal %>%
   group_by(study_id) %>% 
-  dplyr::filter((is.na(dmagediag) & hba1c >= 6.5)) %>%
+  dplyr::filter((is.na(dmagediag) & (hba1c >= 6.5 | glucosef2 >= 6.993))) %>%
   ungroup() %>% 
   mutate(dmagediag = age)
 

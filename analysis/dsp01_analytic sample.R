@@ -1,22 +1,31 @@
 rm(list = ls());gc();source(".Rprofile")
 
-library(readxl)
+library(purrr)
+library(readr)
+library(writexl)
 
 final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/final_dataset_temp.RDS"))
-aric_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS")) 
-cardia_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01b_cardia.RDS"))
-jhs_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01e_jhs.RDS")) 
-dppos_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01c_dppos.RDS")) 
-mesa_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01f_mesa.RDS")) 
+aric_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS")) %>% 
+  mutate(study = "aric")
+cardia_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01b_cardia.RDS")) %>% 
+  mutate(study = "cardia")
+jhs_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01e_jhs.RDS")) %>% 
+  mutate(study = "jhs")
+dppos_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01c_dppos.RDS")) %>% 
+  mutate(study = "dppos")
+mesa_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01f_mesa.RDS")) %>% 
+  mutate(study = "mesa")
 
 
-longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study = "aric") %>% mutate(study_id = as.numeric(str_replace(study_id,"C",""))),
-                            cardia_longitudinal %>% mutate(study = "cardia"),
-                            jhs_longitudinal %>% mutate(study = "jhs"),
-                            dppos_longitudinal %>% mutate(study = "dppos"),
-                            mesa_longitudinal %>% mutate(study = "mesa")) %>%
+longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study_id = as.numeric(str_replace(study_id,"C",""))),
+                            cardia_longitudinal,
+                            jhs_longitudinal,
+                            dppos_longitudinal,
+                            mesa_longitudinal) %>%
   
   bind_rows(final_dataset_temp %>% dplyr::select(-study_id) %>% rename(study_id = original_study_id) %>% 
+              mutate(age = case_when(is.na(age) ~ dmagediag,
+                                     TRUE ~ age)) %>% 
               dplyr::select(one_of(unique(c(
                 names(aric_longitudinal),
                 names(cardia_longitudinal),
@@ -38,14 +47,16 @@ longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study = "aric") %>% mut
                               TRUE ~ insulinf),
          weight = case_when(!is.na(height) ~ bmi*(height/100)^2,
                             TRUE ~ NA_real_)
-  )
+  ) %>% 
+  mutate(study = case_when(study == "dpp" ~ "dppos",
+                           TRUE ~ study))
 
 saveRDS(longitudinal_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_longitudinal df.RDS"))
 
-
+#--------------------------------------------------------------------------------------------------------------------
+# one cohort one sheet; keep study_id, study, age
 homa2_df <- longitudinal_df %>% 
-  mutate(row_id = row_number()) %>% 
-  dplyr::select(study_id,study,row_id,glucosef2,insulinf2) %>% 
+  dplyr::select(study_id,study,age,glucosef2,insulinf2) %>% 
   dplyr::filter(!is.na(glucosef2) & !is.na(insulinf2)) %>% 
   mutate(
     glucosef2 = case_when(
@@ -59,16 +70,37 @@ homa2_df <- longitudinal_df %>%
       TRUE ~ insulinf2
     ))
 
-write.xlsx(homa2_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/homa2 calculation/homa2 indices calcaulation df.xlsx"))
+study_names <- c("aric","cardia","jhs","dppos","mesa")
+list_of_dataframes <- lapply(study_names, function(name) {
+  homa2_df %>% 
+    dplyr::filter(study == name)
+})
 
-# add homa2 in the dataset by row_id
+names(list_of_dataframes) <- study_names
+
+
+excel_path <- paste0(path_diabetes_subphenotypes_predictors_folder, "/working/cleaned/homa2 calculation/homa2 indices calculation df.xlsx")
+write_xlsx(list_of_dataframes, excel_path)
+
+#--------------------------------------------------------------------------------------------------------------------
+# add homa2 in the dataset by study_id, study, age
+path_to_file <- paste0(path_diabetes_subphenotypes_predictors_folder, "/working/cleaned/homa2 calculation/homa2 indices values.xlsx")
+sheets <- c("aric", "cardia", "jhs", "dppos", "mesa")
+list_of_data <- lapply(sheets, function(sheet) read_excel(path_to_file, sheet = sheet))
+
+homa2_combined <- bind_rows(list_of_data, .id = "study")
+homa2_combined$study <- rep(sheets, sapply(list_of_data, nrow))
+
 analytic_df <- longitudinal_df %>% 
-  mutate(row_id = row_number()) %>%
-  left_join(read_excel(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/homa2 calculation/homa2 indices values.xlsx"))) %>% 
-  dplyr::select(-c(row_id, `HOMA2 %S`)) %>% 
-  rename(homa2b = `HOMA2 %B`, homa2ir = `HOMA2 IR`)
+  left_join(homa2_combined %>% 
+              rename(homa2b = `HOMA2 %B`,
+                     homa2ir = `HOMA2 IR`) %>% 
+              dplyr::select(-c(`HOMA2 %S`,glucosef2,insulinf2)),
+            by = c("study_id","study","age"))
 
 #---------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 # DM cases, 5y before diagnosis records, N = 1129
 dm_df <- analytic_df %>% 

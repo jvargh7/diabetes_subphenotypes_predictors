@@ -11,7 +11,7 @@ jhs_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder
 jhs_dm_all <- jhs_longitudinal %>%
   group_by(study_id) %>% 
   dplyr::filter((!is.na(dmagediag) | 
-                   is.na(dmagediag) & hba1c >= 6.5)) %>%
+                   is.na(dmagediag) & (hba1c >= 6.5 | glucosef >= 126))) %>%
   ungroup()
 
 # Among diagnosed DM, duration <= 1 year, N = 268
@@ -25,7 +25,7 @@ jhs_dm_newdiag <- jhs_dm_all %>%
 # Identify undiagnosed DM based on A1c. Set agediagnosed_dm = current age, N = 14
 jhs_dm_undiag <- jhs_longitudinal %>%
   group_by(study_id) %>% 
-  dplyr::filter((is.na(dmagediag) & hba1c >= 6.5)) %>%
+  dplyr::filter((is.na(dmagediag) & (hba1c >= 6.5 | glucosef >= 126))) %>%
   ungroup() %>% 
   mutate(dmagediag = age)
 
@@ -37,7 +37,7 @@ jhs_ndm <- jhs_longitudinal %>%
 # %>% distinct(study_id) %>%
 # nrow()
 
-### ARRIC Newly diagnosed dm: 282 ###
+### JHS Newly diagnosed dm: 282 ###
 
 #-------------------------------------------------------------------------
 # Total sample (no T2D + new T2D), N = 1817, obs = 4139

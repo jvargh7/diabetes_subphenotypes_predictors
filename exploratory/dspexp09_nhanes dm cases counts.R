@@ -25,15 +25,15 @@ nhanes_data <- process_nhanes_data(years, path_nhanes_ckm_folder) %>%
                         TRUE ~ 0)) 
 
 #-------------------------------------------------------------------------------------------
-# Identify all DM (either dm_age is not NA OR (dm_age is NA, HbA1c >= 6.5))
-# N = 10636
+# Identify all DM (either dm_age is not NA OR (dm_age is NA, HbA1c >= 6.5 | fasting glucose >= 126))
+# N = 11464
 nhanes_dm_all <- nhanes_data %>% 
   group_by(respondentid) %>% 
   dplyr::filter((!is.na(dm_age) | 
-                   is.na(dm_age) & glycohemoglobin >= 6.5)) %>%
+                   is.na(dm_age) & (glycohemoglobin >= 6.5 | fasting_glucose >= 126))) %>%
   ungroup()
 
-# Identify diagnosed DM, N = 8697
+# Identify diagnosed DM, N = 8700
 nhanes_dm_diag <- nhanes_dm_all %>% 
   group_by(respondentid) %>%
   dplyr::filter(dm_doc_told == 1) %>%
@@ -47,23 +47,23 @@ nhanes_dm_newdiag <- nhanes_dm_diag %>%
                   (age - dm_age) <= 1) %>%
   ungroup()
 
-# Identify undiagnosed DM based on A1c. Set dm_age = current age, N = 1960
+# Identify undiagnosed DM based on A1c. Set dm_age = current age, N = 2788
 nhanes_dm_undiag <- nhanes_data %>%
   group_by(respondentid) %>% 
-  dplyr::filter((is.na(dm_age) & glycohemoglobin >= 6.5)) %>%
+  dplyr::filter((is.na(dm_age) & (glycohemoglobin >= 6.5 | fasting_glucose >= 126))) %>%
   ungroup() %>% 
   mutate(dm_age = age)
 
 
-# Exclude all DM from all HRS to get no DM, N = 93164
+# Exclude all DM from all HRS to get no DM, N = 92336
 nhanes_ndm <- nhanes_data %>% 
   dplyr::filter(!respondentid %in% nhanes_dm_all$respondentid) 
 
 
-# distinct(respondentid) %>%
+# %>% distinct(respondentid) %>%
 # nrow()
 
-### NHANES Newly diagnosed (duration <= 1y + undiagnosed) dm: 2717 ###
+### NHANES Newly diagnosed (duration <= 1y + undiagnosed) dm: 3773 ###
 
 #-------------------------------------------------------------------------
 # Total sample (no T2D + new T2D), N = 96109, obs = 96109

@@ -6,15 +6,15 @@ rm(list=ls());gc();source(".Rprofile")
 # includes new diagnosed dm + undiagnosed
 aric_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS"))
 
-# Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5))
-# N = 4842
+# Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5 | fasting glucose >= 126))
+# N = 4386
 aric_dm_all <- aric_longitudinal %>%
   group_by(study_id) %>% 
   dplyr::filter((!is.na(dmagediag) | 
-                   is.na(dmagediag) & hba1c >= 6.5)) %>%
+                   is.na(dmagediag) & (hba1c >= 6.5 | glucosef >= 126))) %>%
   ungroup()
 
-# Among diagnosed DM, duration <= 1 year, N = 4831
+# Among diagnosed DM, duration <= 1 year, N = 4352
 aric_dm_newdiag <- aric_dm_all %>% 
   group_by(study_id) %>% 
   dplyr::filter(!is.na(dmagediag) & !is.na(age) & 
@@ -22,10 +22,10 @@ aric_dm_newdiag <- aric_dm_all %>%
                   (age - dmagediag) <= 1) %>%
   ungroup()
 
-# Identify undiagnosed DM based on A1c. Set agediagnosed_dm = current age, N = 11
+# Identify undiagnosed DM based on A1c. Set agediagnosed_dm = current age, N = 34
 aric_dm_undiag <- aric_longitudinal %>%
   group_by(study_id) %>% 
-  dplyr::filter((is.na(dmagediag) & hba1c >= 6.5)) %>%
+  dplyr::filter((is.na(dmagediag) & (hba1c >= 6.5 | glucosef >= 126))) %>%
   ungroup() %>% 
   mutate(dmagediag = age)
 
@@ -37,10 +37,10 @@ aric_ndm <- aric_longitudinal %>%
 # distinct(study_id) %>%
 # nrow()
 
-### ARRIC Newly diagnosed dm: 4842 ###
+### ARRIC Newly diagnosed dm: 4420 ###
 
 #-------------------------------------------------------------------------
-# Total sample (no T2D + new T2D), N = 14296, obs = 42158
+# Total sample (no T2D + new T2D), N = 13817, obs = 41731
 aric_total <- bind_rows(aric_dm_newdiag,
                        aric_dm_undiag,
                        aric_ndm)
