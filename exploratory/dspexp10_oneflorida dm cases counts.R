@@ -21,7 +21,8 @@ nonsupremedm <- nonsupremedm_lastfup %>%
   left_join(encounter,
             by = "ID") %>% 
   group_by(ID) %>% 
-  mutate(fuptime = as.numeric(difftime(last_followup_date, min(ADMIT_DATE), units = "days")) / 365.25) %>% 
+  mutate(fuptime = as.numeric(difftime(last_followup_date, min(ADMIT_DATE), units = "days")) / 365.25,
+         age_latest = as.numeric(difftime(last_followup_date, index_date, units = "days")) / 365.25 + age) %>% 
   ungroup()
 
 # N obs of non-dm -- number of unique encounter ID, N = 15171513
@@ -51,7 +52,8 @@ supremedm_newdiag <- supremedm_diagnosis %>%
   dplyr::filter(!is.na(age_diagnosis) & !is.na(age) & 
                   (age_diagnosis - age) >= 0 & 
                   (age_diagnosis - age) <= 1) %>%
-  mutate(fuptime = as.numeric(difftime(diagnosis_date, min(ADMIT_DATE), units = "days")) / 365.25) %>% 
+  mutate(fuptime = as.numeric(difftime(diagnosis_date, min(ADMIT_DATE), units = "days")) / 365.25,
+         age_latest = age_diagnosis) %>% 
   ungroup()
 
 
@@ -69,8 +71,7 @@ supremedm_newdiag %>%
 supremeall <- bind_rows(supremedm_newdiag %>% 
                           mutate(dm = 1),
                         nonsupremedm %>% 
-                          mutate(dm = 0))
-  
+                          mutate(dm = 0)) 
 
 # distinct(ID) %>%
 # nrow()
@@ -83,4 +84,6 @@ supremeall_female <- supremeall %>%
 supremeall_racemin <- supremeall %>%
   dplyr::filter(nhwhite == 0) 
 
-
+# mean age_latest
+mean(supremeall$age_latest)
+sd(supremeall$age_latest)
