@@ -74,7 +74,9 @@ hrs_ndm <- hrs_long %>%
 # Total sample (no T2D + new T2D), N = 35973, obs = 288954
 hrs_total <- bind_rows(hrs_dm_newdiag,
                        hrs_dm_undiag,
-                       hrs_ndm)
+                       hrs_ndm) %>% 
+  mutate(race = haven::as_factor(race)) %>% 
+  mutate(race = as.numeric(race))
 
 saveRDS(hrs_total, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp05_hrs new and no dm.RDS"))
 
@@ -87,10 +89,10 @@ attributes(hrs_total$race)$label <- NULL
 # 1: White
 # 2: Black/African American
 # 3: Other
-# N = 9024
+# N = 9835
 hrs_racemin <- hrs_total %>%
   dplyr::filter(!is.na(race)) %>% 
-  dplyr::filter(.data$race != 1) 
+  dplyr::filter(race != 1) 
   
 hrs_age <- hrs_total %>% 
   dplyr::filter(!is.na(age)) %>% 
