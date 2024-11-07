@@ -1,5 +1,5 @@
 rm(list=ls());gc();source(".Rprofile")
-
+library(haven)
 accord_newdm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/accord_newdm.RDS")) %>% 
   rename(race = race_eth) %>% 
   dplyr::select(study_id, study, race, female) %>% 
@@ -26,11 +26,10 @@ attributes(hrs_total$race)$label <- NULL
 hrs_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp05_hrs new and no dm.RDS")) %>% 
   mutate(study_id = as.numeric(hhidpn),
          study = "hrs",
-         race = as_factor(race),  # Convert the labelled data to factors
          race = as.numeric(race),
-         race = case_when(.data$race == 1 ~ "NH White",
-                          .data$race == 2 ~ "NH Black",
-                          .data$race == 3 ~ "NH Other",
+         race = case_when(race == 1 ~ "NH White",
+                          race == 2 ~ "NH Black",
+                          race == 3 ~ "NH Other",
                           TRUE ~ NA_character_))
 
 jhs_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp06_jhs new and no dm.RDS")) %>% 
