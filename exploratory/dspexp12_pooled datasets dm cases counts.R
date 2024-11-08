@@ -143,22 +143,32 @@ prepare_data <- function(df) {
   df %>% 
     select(study_id, study, female, race_cleaned, ethnicity) %>%
     mutate(
+      ethnicity = case_when(race_cleaned == "Hispanic" | race_cleaned == "hispanic" ~ "hispanic",
+                           (race_cleaned != "Hispanic" & race_cleaned != "hispanic") & is.na(ethnicity) | ethnicity == "unknown" ~ "unknown",
+                           TRUE ~ ethnicity),
       race_cleaned = case_when(is.na(race_cleaned) | race_cleaned == "Unknown" ~ "Unknown",
-                       TRUE ~ race_cleaned),
-      ethnicity = case_when(is.na(ethnicity) | ethnicity == "unknown" ~ "unknown",
-                            TRUE ~ ethnicity),
+                               race_cleaned == "black" ~ "Black",
+                               race_cleaned == "white" ~ "White",
+                               race_cleaned == "other" ~ "Other",
+                               race_cleaned == "Hispanic" | race_cleaned == "hispanic" ~ "Unknown",
+                               TRUE ~ race_cleaned),
       sex = case_when(female == 1 ~ "female",
                       female == 0 ~ "male",
                       TRUE ~ "unknown")
-    )
+    ) 
 }
 # N = 494,117
 pooled_df <- bind_rows(lapply(dataset_list, prepare_data)) %>% 
-  mutate(new_id = paste(study, study_id, sep = "_"))
+  mutate(new_id = paste(study, study_id, sep = "_"), 
+         # assign "Other race" to 3 ppl with multiple race_eth
+         race_cleaned = case_when(new_id == "mesa_1076" | new_id == "mesa_1359" | new_id == "mesa_2614" ~ "Other",
+                                  TRUE ~ race_cleaned))
 
 saveRDS(pooled_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp12_pooled dataset new and no dm.RDS"))
 
 #-------------------------------------------------------------------------------------------------------------
+
+pooled_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp12_pooled dataset new and no dm.RDS"))
 
 df <- pooled_df %>% 
   mutate(eth_sex = case_when(sex == "female" & ethnicity == "hispanic" ~ "hispanic female",
@@ -169,7 +179,7 @@ df <- pooled_df %>%
                              sex == "unknown" & ethnicity == "non-hispanic" ~ "non-hispanic unknown",
                              sex == "female" & ethnicity == "unknown" ~ "unknown female",
                              sex == "male" & ethnicity == "unknown" ~ "unknown male",
-                             TRUE ~ "unknown unknown"))
+                             TRUE ~ "unknown unknown")) 
 
 df %>%
   group_by(eth_sex) %>%
@@ -185,7 +195,7 @@ df %>%
 
 
 df1 <- df %>% 
-  dplyr::filter(ethnicity == "unknown" & sex == "female")
+  dplyr::filter(ethnicity == "non-hispanic" & sex == "female")
 
 df1 %>%
   group_by(race_cleaned) %>%
@@ -193,10 +203,18 @@ df1 %>%
     unique_ids = n_distinct(new_id) 
   )
 
+# check if the obs match
+df2 <- df %>% dplyr::filter(eth_sex == "non-hispanic female")
+df3 <- df %>% dplyr::filter(sex == "female" & ethnicity == "non-hispanic" )
 
+# ppl belong to multiple race groups
+df3 %>%
+  group_by(new_id) %>%
+  summarize(race_count = n_distinct(race_cleaned)) %>%
+  dplyr::filter(race_count > 1)
 
-
-
+df3_overlap <- df %>% 
+  dplyr::filter(new_id == "mesa_1076" | new_id == "mesa_1359" | new_id == "mesa_2614")
 
 
 
