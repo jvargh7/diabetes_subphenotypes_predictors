@@ -13,7 +13,7 @@ process_hrs_wave <- function(wave_num, path_folder) {
     readRDS(male_file), 
     readRDS(female_file)
   ) %>%
-    dplyr::select(hhid,pn,hhidpn,age,gender,race,diagnosed_dm,agediagnosed_dm,medication_dm) %>%
+    dplyr::select(hhid,pn,hhidpn,age,gender,race,ethnicity,diagnosed_dm,agediagnosed_dm,medication_dm) %>%
     mutate(wave = wave_num)
 }
 
@@ -75,8 +75,15 @@ hrs_ndm <- hrs_long %>%
 hrs_total <- bind_rows(hrs_dm_newdiag,
                        hrs_dm_undiag,
                        hrs_ndm) %>% 
-  mutate(race = haven::as_factor(race)) %>% 
-  mutate(race = as.numeric(race))
+  mutate(race = haven::as_factor(race),
+         ethnicity = haven::as_factor(ethnicity)) %>% 
+  mutate(race = case_when(race == "1.white/caucasian" ~ "White",
+                          race == "2.black/african american" ~ "Black",
+                          race == "3.other" ~ "Other",
+                          TRUE ~ "Unknown"),
+         ethnicity = case_when(ethnicity == "0.not hispanic" ~ "non-hispanic",
+                               ethnicity == "1.hispanic" ~ "hispanic",
+                               TRUE ~ "unknown"))
 
 saveRDS(hrs_total, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp05_hrs new and no dm.RDS"))
 

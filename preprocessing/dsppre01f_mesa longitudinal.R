@@ -39,7 +39,7 @@ mesa_longitudinal = mesa_dat_all %>%
   mutate(
     available_labs = rowSums(!is.na(.[,lab_vars])),
     available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,exam,age,dmagediag,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),female,race)
+  dplyr::select(study_id,exam,age,dmagediag,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),female,race,ethnicity)
 
 
 

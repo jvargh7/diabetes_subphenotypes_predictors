@@ -50,7 +50,7 @@ aric_longitudinal = aric_analysis %>%
   mutate(
          available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,visit,age,dmagediag,female,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),female,race)
+  dplyr::select(study_id,visit,age,dmagediag,female,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),race_rev,race)
 
 
 saveRDS(aric_longitudinal,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS"))

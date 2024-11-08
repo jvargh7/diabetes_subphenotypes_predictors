@@ -13,8 +13,7 @@ jhs_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
   dplyr::filter(aric == 0) %>% 
   dplyr::filter(!study_id %in% jhs_baselinedm$study_id) %>%
   arrange(study_id,visit) %>% 
-  mutate(
-         race_eth = "NH Black",
+  mutate(race_eth = "NH Black",
          female = case_when(female == "Female" ~ 1,
                             female == "Male" ~ 0,
                             TRUE ~ NA_real_))

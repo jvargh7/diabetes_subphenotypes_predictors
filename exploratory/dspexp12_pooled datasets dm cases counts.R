@@ -1,28 +1,40 @@
 rm(list=ls());gc();source(".Rprofile")
 
+# cohort: 
+# 1. only race, in answers, no "NH"; if they have "Hispanic" in their answers, we can assume others are NH
+# 2. race has "NH" information
+
 # N = 601
+# raw data: raceclass (White, Black, Hispanic, Other); no separate enthnicty
 accord_newdm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/accord_newdm.RDS")) %>% 
   dplyr::select(study_id, race_eth, female) %>% 
   mutate(study = "accord",
          ethnicity = case_when(race_eth == "Hispanic" ~ "hispanic",
                                race_eth == "NH Black" | race_eth == "NH White" | race_eth == "NH Other" ~ "non-hispanic",
                                TRUE ~ "unknown"),
-         race = race_eth)
+         race_cleaned = race_eth)
 # N = 13,817
+# raw data: no ethnicity; race (W, B); should use race_rev
+# NH: to be consistent
 aric_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp02_aric new and no dm.RDS")) %>% 
-  dplyr::select(study_id, race, female) %>% 
+  dplyr::select(study_id, race_rev, female) %>% 
   mutate(study_id = as.integer(sub("C", "", study_id)),
          study = "aric",
-         ethnicity = case_when(race == "NH Black" | race == "NH White" ~ "non-hispanic",
-                               TRUE ~ "unknown")) 
+         ethnicity = "unknown",
+         race_cleaned = case_when(race_rev == "White" ~ "White",
+                                  race_rev == "AA" ~ "Black",
+                                  TRUE ~ NA_character_)) 
 # N = 5054
+# raw data: codebook has ethnicity; in extracted raw data, race only has nh white (4) and nh black (5)
 cardia_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp03_cardia new and no dm.RDS")) %>% 
   dplyr::select(study_id, race, female) %>% 
   mutate(study = "cardia",
          ethnicity = case_when(race == "NH Black" | race == "NH White" ~ "non-hispanic",
-                               TRUE ~ "unknown"))
+                               TRUE ~ "unknown"),
+         race_cleaned = race)
   
 # N = 3589
+# raw data: no ethnicity; race_eth in raw data (white, black, other, hispanic, assume NH)
 dppos_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp04_dpp new and no dm.RDS")) %>% 
   dplyr::select(study_id, race_eth, sex) %>% 
   mutate(female = case_when(sex == 1 ~ 0,
@@ -32,46 +44,45 @@ dppos_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
          ethnicity = case_when(race_eth == "Hispanic" ~ "hispanic",
                                race_eth == "NH Black" | race_eth == "NH White" | race_eth == "NH Other" ~ "non-hispanic",
                                TRUE ~ "unknown"),
-         race = race_eth)
+         race_cleaned = race_eth)
   
 # N = 35,973
 hrs_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp05_hrs new and no dm.RDS")) %>%
-  dplyr::select(hhidpn, race, gender) %>% 
+  dplyr::select(hhidpn, race, ethnicity, gender) %>% 
   mutate(study_id = as.numeric(hhidpn),
          study = "hrs",
          female = case_when(gender == "Female" ~ 1,
                             gender == "Male" ~ 0,
                             TRUE ~ NA_real_),
-         ethnicity = case_when(race == 1 | race == 2 | race == 3 ~ "non-hispanic",
-                               TRUE ~ "unknown"),
-         race = case_when(race == 1 ~ "NH White",
-                          race == 2 ~ "NH Black",
-                          race == 3 ~ "NH Other",
-                          TRUE ~ "Unknown"))
+         race_cleaned = race)
 # N = 1817
+# ask Jithin about race_eth, not in codebook now
+# participants: African Americans
 jhs_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp06_jhs new and no dm.RDS")) %>% 
-  dplyr::select(study_id, race_eth, female) %>% 
+  dplyr::select(study_id, female) %>% 
   mutate(study = "jhs",
-         ethnicity = case_when(race_eth == "NH Black" ~ "non-hispanic",
-                               TRUE ~ "unknown"),
-         race = race_eth) 
+         ethnicity = "unknown",
+         race_cleaned = "Black") 
 # N = 877
+# black, white, other
 la_newdm <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/la_newdm.RDS")) %>% 
   dplyr::select(study_id, race_eth, female) %>%
   mutate(study = "look ahead",
          ethnicity = case_when(race_eth == "Hispanic" ~ "hispanic",
                                race_eth == "NH Black" | race_eth == "NH White" | race_eth == "NH Other" ~ "non-hispanic",
                                TRUE ~ "unknown"),
-         race = race_eth)
+         race_cleaned = race_eth)
 # N = 6094
+# raw data: race (1,2,3,4...); white, black, chinese, hispanic; have ethnicity
 mesa_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp08_mesa new and no dm.RDS")) %>% 
-  dplyr::select(study_id, race, female) %>% 
-  mutate(ethnicity = case_when(race == "Hispanic" ~ "hispanic",
-                               race == "NH Black" | race == "NH White" ~ "non-hispanic",
+  dplyr::select(study_id, race, ethnicity, female) %>% 
+  mutate(study = "mesa",
+         ethnicity = case_when(ethnicity == 1 ~ "hispanic",
+                               ethnicity == 0 ~ "non-hispanic",
                                TRUE ~ "unknown"),
-         study = "mesa")
+         race_cleaned = race)
   
-# 96,109
+# N = 96,109
 nhanes_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp09_nhanes new and no dm.RDS")) %>% 
   dplyr::select(respondentid, race, gender) %>% 
   mutate(study_id = respondentid,
@@ -79,7 +90,7 @@ nhanes_total <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/w
          ethnicity = case_when(race == 1 | race == 2 ~ "hispanic",
                                race == 3 | race == 4 | race == 6 | race == 7 ~ "non-hispanic",
                                TRUE ~ "unknown"),
-         race = case_when(race == 3 ~ "NH White",
+         race_cleaned = case_when(race == 3 ~ "NH White",
                           race == 4 ~ "NH Black",
                           race == 6 ~ "Asian",
                           race == 7 ~ "NH Other",
@@ -97,18 +108,19 @@ oneflorida <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wor
   mutate(study_id = cur_group_id()) %>%
   ungroup() %>% 
   mutate(study = "oneflorida",
-         race = case_when(nhwhite == 1 & nhblack == 0 & hispanic == 0 & nhother == 0 ~ "NH White",
-                          nhwhite == 0 & nhblack == 1 & hispanic == 0 & nhother == 0 ~ "NH Black",
-                          nhwhite == 0 & nhblack == 0 & hispanic == 1 & nhother == 0 ~ "Hispanic",
-                          nhwhite == 0 & nhblack == 0 & hispanic == 0 & nhother == 1 ~ "NH Other",
-                          TRUE ~ "Unknown"),
-         ethnicity = case_when(race == "Hispanic" ~ "hispanic",
-                               race == "NH Black" | race == "NH White" | race == "NH Other" ~ "non-hispanic",
+         race_cleaned = case_when(nhwhite == 1 & nhblack == 0 & hispanic == 0 & nhother == 0 ~ "NH White",
+                                  nhwhite == 0 & nhblack == 1 & hispanic == 0 & nhother == 0 ~ "NH Black",
+                                  nhwhite == 0 & nhblack == 0 & hispanic == 1 & nhother == 0 ~ "Hispanic",
+                                  nhwhite == 0 & nhblack == 0 & hispanic == 0 & nhother == 1 ~ "NH Other",
+                                  TRUE ~ "Unknown"),
+         ethnicity = case_when(hispanic == 1 ~ "hispanic",
+                               hispanic == 0 ~ "non-hispanic",
                                TRUE ~ "unknown")) 
 # N = 641
 youth <- read.csv(paste0(path_diabetes_subphenotypes_youth_folder,"/working/cleaned/etiologic/setdy01a_analytic sample.csv")) %>% 
   dplyr::select(study_id, study, race, race_eth, ethnicity, female) %>% 
-  mutate(study_id = as.numeric(gsub("-", "", study_id)))
+  mutate(study_id = as.numeric(gsub("-", "", study_id)),
+         race_cleaned = race)
 
 
 #-------------------------------------------------------------------------------------------------------------
@@ -129,10 +141,10 @@ dataset_list <- list(
 
 prepare_data <- function(df) {
   df %>% 
-    select(study_id, study, female, race, ethnicity) %>%
+    select(study_id, study, female, race_cleaned, ethnicity) %>%
     mutate(
-      race = case_when(is.na(race) | race == "Unknown" ~ "Unknown",
-                       TRUE ~ race),
+      race_cleaned = case_when(is.na(race_cleaned) | race_cleaned == "Unknown" ~ "Unknown",
+                       TRUE ~ race_cleaned),
       ethnicity = case_when(is.na(ethnicity) | ethnicity == "unknown" ~ "unknown",
                             TRUE ~ ethnicity),
       sex = case_when(female == 1 ~ "female",
@@ -166,17 +178,17 @@ df %>%
   )
 
 df %>%
-  group_by(race) %>%
+  group_by(race_cleaned) %>%
   summarise(
     unique_ids = n_distinct(new_id) 
   )
 
 
 df1 <- df %>% 
-  dplyr::filter(ethnicity == "unkown" & sex == "female")
+  dplyr::filter(ethnicity == "unknown" & sex == "female")
 
 df1 %>%
-  group_by(race) %>%
+  group_by(race_cleaned) %>%
   summarise(
     unique_ids = n_distinct(new_id) 
   )
