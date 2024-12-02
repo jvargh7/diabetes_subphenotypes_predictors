@@ -1,0 +1,85 @@
+term,MARD,MOD,SIDD,SIRD
+studycardia,"0.32 (0.26, 0.4)",NA,NA,NA
+studydppos,"0.59 (0.57, 0.62)",NA,NA,NA
+studyjhs,"0.59 (0.5, 0.7)",NA,NA,NA
+studymesa,"0.12 (0.11, 0.13)",NA,NA,NA
+age,"0 (0, 0.01)",NA,NA,NA
+race_ethNH Black,"0.86 (0.81, 0.91)",NA,NA,NA
+race_ethNH Other,"0.92 (0.86, 0.98)",NA,NA,NA
+race_ethNH White,"0.86 (0.82, 0.9)",NA,NA,NA
+female,"0.93 (0.89, 0.97)",NA,NA,NA
+baseline_serumcreatinine,"1.01 (0.95, 1.08)",NA,NA,NA
+change_serumcreatinine,"1.01 (0.97, 1.07)",NA,NA,NA
+baseline_uric_acid,"1.03 (1.01, 1.05)",NA,NA,NA
+change_uric_acid,"1.02 (1.01, 1.03)",NA,NA,NA
+baseline_hba1c,"0.83 (0.8, 0.86)",NA,NA,NA
+change_hba1c,"0.9 (0.87, 0.92)",NA,NA,NA
+baseline_bmi,"0.9 (0.9, 0.91)",NA,NA,NA
+change_bmi,"0.96 (0.95, 0.97)",NA,NA,NA
+baseline_homa2ir,"0.83 (0.81, 0.85)",NA,NA,NA
+change_homa2ir,"0.89 (0.87, 0.9)",NA,NA,NA
+baseline_medial,"1.01 (1.01, 1.02)",NA,NA,NA
+change_medial,"1.01 (1, 1.01)",NA,NA,NA
+studycardia,NA,"9.88 (8.62, 11.31)",NA,NA
+studydppos,NA,"5.46 (4.84, 6.16)",NA,NA
+studyjhs,NA,"7.58 (6.52, 8.83)",NA,NA
+studymesa,NA,"1.09 (0.9, 1.33)",NA,NA
+age,NA,"0 (0, 0)",NA,NA
+race_ethNH Black,NA,"1.14 (1.09, 1.2)",NA,NA
+race_ethNH Other,NA,"0.94 (0.87, 1.01)",NA,NA
+race_ethNH White,NA,"1.06 (1.01, 1.11)",NA,NA
+female,NA,"1.18 (1.14, 1.23)",NA,NA
+baseline_serumcreatinine,NA,"1 (0.95, 1.05)",NA,NA
+change_serumcreatinine,NA,"1 (0.97, 1.04)",NA,NA
+baseline_uric_acid,NA,"1 (0.99, 1.02)",NA,NA
+change_uric_acid,NA,"1 (0.99, 1.01)",NA,NA
+baseline_hba1c,NA,"1.05 (1.03, 1.07)",NA,NA
+change_hba1c,NA,"1.01 (0.99, 1.03)",NA,NA
+baseline_bmi,NA,"1.04 (1.04, 1.04)",NA,NA
+change_bmi,NA,"1.02 (1.01, 1.03)",NA,NA
+baseline_homa2ir,NA,"1.01 (1, 1.01)",NA,NA
+change_homa2ir,NA,"1 (1, 1.01)",NA,NA
+baseline_medial,NA,"0.99 (0.98, 0.99)",NA,NA
+change_medial,NA,"0.99 (0.99, 0.99)",NA,NA
+studycardia,NA,NA,"0.54 (0.36, 0.8)",NA
+studydppos,NA,NA,"0.16 (0.12, 0.23)",NA
+studyjhs,NA,NA,"0.53 (0.33, 0.85)",NA
+studymesa,NA,NA,"0.82 (0.62, 1.1)",NA
+age,NA,NA,"0 (0, 0)",NA
+race_ethNH Black,NA,NA,"0.75 (0.59, 0.95)",NA
+race_ethNH Other,NA,NA,"0.56 (0.42, 0.75)",NA
+race_ethNH White,NA,NA,"0.37 (0.28, 0.47)",NA
+female,NA,NA,"0.4 (0.32, 0.51)",NA
+baseline_serumcreatinine,NA,NA,"1.02 (0.87, 1.19)",NA
+change_serumcreatinine,NA,NA,"0.99 (0.88, 1.12)",NA
+baseline_uric_acid,NA,NA,"0.95 (0.88, 1.04)",NA
+change_uric_acid,NA,NA,"0.96 (0.9, 1.02)",NA
+baseline_hba1c,NA,NA,"1.86 (1.73, 2.01)",NA
+change_hba1c,NA,NA,"1.43 (1.35, 1.51)",NA
+baseline_bmi,NA,NA,"1.01 (0.99, 1.02)",NA
+change_bmi,NA,NA,"1.02 (0.98, 1.06)",NA
+baseline_homa2ir,NA,NA,"1 (0.94, 1.06)",NA
+change_homa2ir,NA,NA,"1 (0.96, 1.04)",NA
+baseline_medial,NA,NA,"1.01 (0.99, 1.02)",NA
+change_medial,NA,NA,"1.01 (0.99, 1.02)",NA
+studycardia,NA,NA,NA,"1.21 (0.53, 2.75)"
+studydppos,NA,NA,NA,"8.68 (6.43, 11.72)"
+studyjhs,NA,NA,NA,"1.46 (0.59, 3.66)"
+studymesa,NA,NA,NA,"110.81 (82.81, 148.29)"
+age,NA,NA,NA,"0 (0, 0)"
+race_ethNH Black,NA,NA,NA,"0.69 (0.61, 0.77)"
+race_ethNH Other,NA,NA,NA,"0.91 (0.79, 1.05)"
+race_ethNH White,NA,NA,NA,"0.89 (0.81, 0.98)"
+female,NA,NA,NA,"1.02 (0.93, 1.12)"
+baseline_serumcreatinine,NA,NA,NA,"1.04 (0.89, 1.21)"
+change_serumcreatinine,NA,NA,NA,"1.05 (0.94, 1.17)"
+baseline_uric_acid,NA,NA,NA,"1.18 (1.14, 1.22)"
+change_uric_acid,NA,NA,NA,"1.08 (1.06, 1.11)"
+baseline_hba1c,NA,NA,NA,"0.81 (0.76, 0.86)"
+change_hba1c,NA,NA,NA,"0.89 (0.85, 0.93)"
+baseline_bmi,NA,NA,NA,"1.03 (1.02, 1.03)"
+change_bmi,NA,NA,NA,"1.03 (1.01, 1.05)"
+baseline_homa2ir,NA,NA,NA,"1.04 (1.03, 1.05)"
+change_homa2ir,NA,NA,NA,"1.02 (1.01, 1.02)"
+baseline_medial,NA,NA,NA,"0.99 (0.98, 0.99)"
+change_medial,NA,NA,NA,"0.99 (0.99, 1)"

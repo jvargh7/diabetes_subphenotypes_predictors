@@ -4,8 +4,11 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 
-# Assuming analytic_df is your dataset
-# Selecting only relevant columns for the heatmap
+analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.RDS")) %>% 
+  dplyr::filter(!is.na(cluster_study_id)) %>% 
+  mutate(t = age - dmagediag) %>% 
+  dplyr::filter(t >= -15, t < 0)
+
 biomarkers <- c("hba1c", "insulinf", "glucosef", "glucose2h", "tgl", 
                 "hdlc", "ldlc", "serumcreatinine", "urinecreatinine", 
                 "egfr", "apo_a", "apo_b", "uric_acid", "vldlc")

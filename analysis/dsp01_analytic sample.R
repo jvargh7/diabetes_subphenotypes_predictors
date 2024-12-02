@@ -112,4 +112,4 @@ analytic_df <- longitudinal_df %>%
 
 saveRDS(analytic_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.RDS"))
 
-
+write.csv(analytic_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.csv"))
