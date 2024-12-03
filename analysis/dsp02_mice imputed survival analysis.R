@@ -240,9 +240,22 @@ coxph_output <- coxph_results %>%
                            TRUE ~ NA_character_)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) %>% 
-  write_csv("analysis/dsp02_imputed cox ph results.csv")
+  dplyr::select(term, MARD, MOD, SIDD, SIRD)
 
+df1 <- coxph_output %>% 
+  dplyr::select(term, MARD) 
+df2 <- coxph_output %>% 
+  dplyr::select(term, MOD)
+df3 <- coxph_output %>% 
+  dplyr::select(term, SIDD)
+df4 <- coxph_output %>% 
+  dplyr::select(term, SIRD)
+
+output <- na.omit(df1) %>% 
+  left_join(na.omit(df2), by = "term") %>% 
+  left_join(na.omit(df3), by = "term") %>% 
+  left_join(na.omit(df4), by = "term")  %>% 
+  write_csv("analysis/dsp02_imputed cox ph results.csv")
 #------------------------------------------------------------------------------------------------------------------------
 # TDCM analysis
 # Start time: previous age; End time: current age at visit
@@ -336,7 +349,21 @@ tdcm_output <- tdcm_results %>%
                            TRUE ~ NA_character_)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) %>% 
+  dplyr::select(term, MARD, MOD, SIDD, SIRD) 
+
+df1 <- tdcm_change_output %>% 
+  dplyr::select(term, MARD) 
+df2 <- tdcm_change_output %>% 
+  dplyr::select(term, MOD)
+df3 <- tdcm_change_output %>% 
+  dplyr::select(term, SIDD)
+df4 <- tdcm_change_output %>% 
+  dplyr::select(term, SIRD)
+
+output <- na.omit(df1) %>% 
+  left_join(na.omit(df2), by = "term") %>% 
+  left_join(na.omit(df3), by = "term") %>% 
+  left_join(na.omit(df4), by = "term") %>% 
   write_csv("analysis/dsp02_imputed tdcm results.csv")
 #------------------------------------------------------------------------------------------------------------------------
 # TDCM change analysis - baseline + change
@@ -375,7 +402,21 @@ tdcm_change_output <- tdcm_change_results %>%
                            TRUE ~ NA_character_)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) %>% 
+  dplyr::select(term, MARD, MOD, SIDD, SIRD) 
+
+df1 <- tdcm_change_output %>% 
+  dplyr::select(term, MARD) 
+df2 <- tdcm_change_output %>% 
+  dplyr::select(term, MOD)
+df3 <- tdcm_change_output %>% 
+  dplyr::select(term, SIDD)
+df4 <- tdcm_change_output %>% 
+  dplyr::select(term, SIRD)
+
+output <- na.omit(df1) %>% 
+  left_join(na.omit(df2), by = "term") %>% 
+  left_join(na.omit(df3), by = "term") %>% 
+  left_join(na.omit(df4), by = "term") %>% 
   write_csv("analysis/dsp02_imputed tdcm change results.csv")
 #------------------------------------------------------------------------------------------------------------------------
 # causal survival forest
@@ -448,15 +489,27 @@ csf_output <- csf_results %>%
          uci = exp(estimate + 1.96 * std_error)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) %>% 
-  write_csv("analysis/dsp02_imputed csf results.csv")
+  dplyr::select(term, MARD, MOD, SIDD, SIRD) 
 
+df1 <- csf_output %>% 
+  dplyr::select(term, MARD) 
+df2 <- csf_output %>% 
+  dplyr::select(term, MOD)
+df3 <- csf_output %>% 
+  dplyr::select(term, SIDD)
+df4 <- csf_output %>% 
+  dplyr::select(term, SIRD)
+
+output <- na.omit(df1) %>% 
+  left_join(na.omit(df2), by = "term") %>% 
+  left_join(na.omit(df3), by = "term") %>% 
+  left_join(na.omit(df4), by = "term") %>% 
+  write_csv("analysis/dsp02_imputed csf results.csv")
 
 average_treatment_effect(csf)
 # Retrieve out-of-bag CATE estimates 
 tau.hat= predict(csf)$predictions 
 summary(tau.hat)
-
 
 
 
