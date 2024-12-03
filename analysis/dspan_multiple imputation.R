@@ -5,7 +5,7 @@ analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
 
 colnames(analytic_df)
 
-continuous_vars <- c("age", "dmagediag", "sbp", "dbp", "height", "wc", "bmi", "hba1c", "insulinf",
+continuous_vars <- c("age", "sbp", "dbp", "height", "wc", "bmi", "hba1c", "insulinf",
                      "glucosef", "glucose2h", "tgl", "hdlc", "ldlc", "serumcreatinine", "urinecreatinine",
                      "egfr", "apo_a", "apo_b", "uric_acid", "vldlc", "diagDays", "lab_StudyDays", 
                      "anthro_StudyDays", "hc", "triceps", "iliac", "abdominal", "medial", "ast", "alt",
@@ -15,7 +15,8 @@ proportion_vars <- c("female")
 
 grouped_vars <- c("race_eth")
 
-id_vars <- c("study_id", "study", "visit", "year", "exam", "cluster_study_id", "newdm")
+# Moved dmagediag to an ID variable
+id_vars <- c("study_id", "study", "visit", "year", "exam", "cluster_study_id", "newdm", "dmagediag")
 
 library(survey)
 library(mice)
@@ -32,6 +33,7 @@ mi_null <- mice(before_imputation, maxit = 0)
 
 method = mi_null$method
 method[proportion_vars] <- "logreg"
+method[id_vars] <- ""
 
 pred = mi_null$predictorMatrix
 

@@ -96,7 +96,7 @@ for (i in seq_along(diseases)) {
 # Save regression results to CSV
 regression_results %>% 
   bind_rows() %>% 
-  write_csv("analysis/dsp02_survival analysis.csv")
+  write_csv("analysis/dspan03_survival analysis.csv")
 
 
 # Format regression results for viewing (Age- and sex-adjusted model)
@@ -118,7 +118,7 @@ regression_results %>%
   # mutate(MARD = "Ref") %>% 
   # dplyr::select(outcome, MARD, MOD, SIDD, SIRD) %>% 
   # View() %>% 
-  write_csv("analysis/dsp02_survival analysis results.csv")
+  write_csv("analysis/dspan03_survival analysis results.csv")
 
 
 

@@ -7,17 +7,34 @@ library(broom)
 library(tidyr)
 
 # follow-up time >15y & dm == 0 --- event == 0
-mice_df <- readRDS("analysis/mi_dfs.RDS") %>% 
+mice_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS")) %>% 
   group_by(study, study_id) %>% 
-  mutate(min_age = min(age),
-         max_age = max(age)) %>%
-  # dplyr::filter(age <= min_age + 15) %>%
-  select(-max_age) %>% 
+  mutate(min_age = min(age)) %>%
+  # Restrict to observations within 15 years of earliest age
+  dplyr::filter(age <= (min_age + 15)) %>%
+  # There are individuals whose dmagediag < minimum age
+  dplyr::filter(is.na(dmagediag) | (age <= dmagediag)) %>% 
+  
+  mutate(event = case_when(# Individuals who are never diagnosed
+                           is.na(dmagediag) ~ 0,
+                           
+                           # Individuals who are diagnosed within 15 years of earliest wave
+                           dmagediag <= (min_age + 15) ~ 1,
+                           
+                           # Individuals who are diagnosed after 15 years of earliest wave
+                           TRUE ~ 0
+                           
+                           
+                           ),
+         censored_age = case_when(is.na(dmagediag) ~ max(age),
+                                  
+                                  !is.na(dmagediag) & dmagediag <= (min_age + 15) ~ dmagediag,
+                                  
+                                  TRUE ~ max(age)
+                                  
+                                  )) %>%
   ungroup() %>% 
-  mutate(dm = case_when(!is.na(dmagediag) | hba1c >= 6.5 | glucosef >= 126 | glucose2h >= 200 ~ 1,
-                        TRUE ~ 0),
-         event = case_when(age <= min_age + 15 ~ dm,
-                           TRUE ~ 0)) %>% 
+  
   mutate(study_aric = case_when(study == "aric" ~ 1,
                                 TRUE ~ 0),
          study_cardia = case_when(study == "cardia" ~ 1,
@@ -35,29 +52,25 @@ mice_df <- readRDS("analysis/mi_dfs.RDS") %>%
          race_nhoth = case_when(race_eth == "NH Other" ~ 1,
                                 TRUE ~ 0),
          race_hisp = case_when(race_eth == "Hispanic" ~ 1,
-                                TRUE ~ 0))
+                                TRUE ~ 0)) %>%
+  # define time to event
+  mutate(time_to_event = censored_age - age)
 
-# define time to event
-time_df <- mice_df %>% 
-  group_by(study, study_id) %>% 
-  mutate(lab_diagage = case_when(hba1c >= 6.5 | glucosef >= 126 | glucose2h >= 200 ~ age, 
-                                 TRUE ~ NA_real_),
-         min_lab_diagage = min(lab_diagage),
-         min_dmagediag = min(dmagediag)) %>% 
-  
-  mutate(time_to_event = case_when(
-    !is.na(min_dmagediag) ~ abs(min_dmagediag - min_age),
-    is.na(min_dmagediag) & !is.na(min_lab_diagage) ~ abs(min_lab_diagage - min_age),
-    TRUE ~ NA_real_
-  )) %>% 
-  ungroup() %>% 
-  select(-c(min_age,min_lab_diagage,min_dmagediag))
 
 #------------------------------------------------------------------------------------------------------------------------
 # cross-section datatse, cox PH model
 # overall, include all variables, 1 obs for each person
-cross_df <- time_df %>% 
-  dplyr::filter(age == min(age))
+cross_df <- mice_df %>% 
+  group_by(study_id,study) %>% 
+  dplyr::filter(age == min(age)) %>% 
+  ungroup()
+
+table(cross_df$event)
+
+# Visualize distribution of time to event or censoring
+ggplot(data=cross_df,aes(x=time_to_event,group=event,fill=factor(event))) +
+  geom_histogram(alpha=0.5,position=position_dodge(width=0.9),bins=10)
+
 
 cox_mod <- coxph(Surv(time_to_event, event) ~ study_aric + study_cardia + study_dppos + study_jhs + study_mesa + age + female 
                                            + race_nhwhi + race_nhbla + race_nhoth + race_hisp + bmi + hba1c + sbp + dbp + hdlc + ldlc 
