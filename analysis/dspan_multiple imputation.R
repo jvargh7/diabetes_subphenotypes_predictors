@@ -15,8 +15,8 @@ colnames(analytic_df)
 continuous_vars <- c("age", "sbp", "dbp", "height", "wc", "bmi", "hba1c", "insulinf",
                      "glucosef", "glucose2h", "tgl", "hdlc", "ldlc", "serumcreatinine", 
                      "ast", "alt","weight", "homa2b", "homa2ir",
-                     # "apo_a", "apo_b", "uric_acid", "vldlc", "urinecreatinine","urinealbumin", "uacr"
-                     # "hc", "triceps", "iliac", "abdominal", "medial", 
+                     "apo_a", "apo_b", "uric_acid", "vldlc", "urinecreatinine","urinealbumin", "uacr",
+                     "hc", "triceps", "iliac", "abdominal", "medial", 
                      "insulinf2", "glucosef2"
                      )
 

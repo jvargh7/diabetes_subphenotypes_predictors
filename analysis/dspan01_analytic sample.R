@@ -10,9 +10,11 @@ aric_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folde
 cardia_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01b_cardia.RDS")) %>% 
   mutate(study = "cardia")
 jhs_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01e_jhs.RDS")) %>% 
-  mutate(study = "jhs")
+  mutate(study = "jhs",
+         race = race_eth)
 dppos_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01c_dppos.RDS")) %>% 
-  mutate(study = "dppos")
+  mutate(study = "dppos",
+         race = race_eth)
 mesa_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01f_mesa.RDS")) %>% 
   mutate(study = "mesa")
 
@@ -59,7 +61,7 @@ longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study_id = as.numeric(s
   mutate(study = case_when(study == "dpp" ~ "dppos",
                            TRUE ~ study))
 
-saveRDS(longitudinal_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_longitudinal df.RDS"))
+saveRDS(longitudinal_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_longitudinal df.RDS"))
 
 #--------------------------------------------------------------------------------------------------------------------
 # one cohort one sheet; keep study_id, study, age
@@ -110,6 +112,6 @@ analytic_df <- longitudinal_df %>%
               dplyr::select(cluster_study_id,original_study_id,cluster,study,female),
             by=c("study"="study","study_id" = "original_study_id","female"))
 
-saveRDS(analytic_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.RDS"))
+saveRDS(analytic_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS"))
 
-write.csv(analytic_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.csv"))
+write.csv(analytic_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.csv"))

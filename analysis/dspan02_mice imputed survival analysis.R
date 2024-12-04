@@ -471,9 +471,9 @@ X = cbind(
   age = analytic_sample$age,
   homa2ir = analytic_sample$homa2ir,
   hba1c = analytic_sample$hba1c,
-  serumcreatinine = analytic_sample$serumcreatinine
-  # uric_acid = analytic_sample$uric_acid,
-  # bmi = analytic_sample$bmi,
+  serumcreatinine = analytic_sample$serumcreatinine,
+  uric_acid = analytic_sample$uric_acid,
+  bmi = analytic_sample$bmi
   # insulinf = analytic_sample$insulinf,
   # hc = analytic_sample$hc,
   # glucosef = analytic_sample$glucosef
@@ -541,9 +541,4 @@ average_treatment_effect(csf)
 # Retrieve out-of-bag CATE estimates 
 tau.hat= predict(csf)$predictions 
 summary(tau.hat)
-
-
-
-## presentation comparing random forest, csf, cox PH ##
-
 
