@@ -261,6 +261,9 @@ output <- na.omit(df1) %>%
   write_csv("analysis/dspan02_imputed cox ph results.csv")
 
 #--------------------------------------------------------------------
+overall_cp_var8 <- coxph(Surv(time_to_event, event) ~ age + bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
+                      data = cross_df)
+
 mard_cp_var8 <- coxph(Surv(time_to_event, mard) ~ age + bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                  data = cross_df)
 
@@ -275,6 +278,7 @@ sird_cp_var8 <- coxph(Surv(time_to_event, sird) ~ age + bmi + hba1c + homa2b + h
 
 
 coxph_results <- bind_rows(
+  broom::tidy(overall_cp_var8) %>% mutate(model = "Overall"),
   broom::tidy(mard_cp_var8) %>% mutate(model = "MARD"),
   broom::tidy(mod_cp_var8) %>% mutate(model = "MOD"),
   broom::tidy(sidd_cp_var8) %>% mutate(model = "SIDD"),
@@ -287,8 +291,10 @@ coxph_output <- coxph_results %>%
          uci = exp(estimate + 1.96 * std.error)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD)
+  dplyr::select(term, Overall, MARD, MOD, SIDD, SIRD)
 
+df0 <- coxph_output %>% 
+  dplyr::select(term, Overall)
 df1 <- coxph_output %>% 
   dplyr::select(term, MARD) 
 df2 <- coxph_output %>% 
@@ -298,7 +304,8 @@ df3 <- coxph_output %>%
 df4 <- coxph_output %>% 
   dplyr::select(term, SIRD)
 
-output <- na.omit(df1) %>% 
+output <- na.omit(df0) %>% 
+  left_join(na.omit(df1), by = "term") %>% 
   left_join(na.omit(df2), by = "term") %>% 
   left_join(na.omit(df3), by = "term") %>% 
   left_join(na.omit(df4), by = "term")  %>% 
@@ -409,7 +416,7 @@ output <- na.omit(df1) %>%
   write_csv("analysis/dspan02_imputed tdcm results.csv")
 
 #----------------------------------------------------------------
-tdcm_mod_var7 <- coxph(Surv(tstart, tstop, event) ~ bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, data = tdcm_df)
+overall_tdcm_var7 <- coxph(Surv(tstart, tstop, event) ~ bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, data = tdcm_df)
 
 mard_tdcm_var7 <- coxph(Surv(tstart, tstop, mard) ~ bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, data = tdcm_df)
 mod_tdcm_var7 <- coxph(Surv(tstart, tstop, mod) ~ bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, data = tdcm_df)
@@ -417,6 +424,7 @@ sidd_tdcm_var7 <- coxph(Surv(tstart, tstop, sidd) ~ bmi + hba1c + homa2b + homa2
 sird_tdcm_var7 <- coxph(Surv(tstart, tstop, sird) ~ bmi + hba1c + homa2b + homa2ir + ldlc + sbp + egfr_ckdepi_2021, data = tdcm_df)
 
 tdcm_results <- bind_rows(
+  broom::tidy(overall_tdcm_var7) %>% mutate(model = "Overall"),
   broom::tidy(mard_tdcm_var7) %>% mutate(model = "MARD"),
   broom::tidy(mod_tdcm_var7) %>% mutate(model = "MOD"),
   broom::tidy(sidd_tdcm_var7) %>% mutate(model = "SIDD"),
@@ -429,8 +437,10 @@ tdcm_output <- tdcm_results %>%
          uci = exp(estimate + 1.96 * std.error)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) 
+  dplyr::select(term, Overall, MARD, MOD, SIDD, SIRD) 
 
+df0 <- tdcm_output %>% 
+  dplyr::select(term, Overall) 
 df1 <- tdcm_output %>% 
   dplyr::select(term, MARD) 
 df2 <- tdcm_output %>% 
@@ -440,7 +450,8 @@ df3 <- tdcm_output %>%
 df4 <- tdcm_output %>% 
   dplyr::select(term, SIRD)
 
-output <- na.omit(df1) %>% 
+output <- na.omit(df0) %>% 
+  left_join(na.omit(df1), by = "term") %>%
   left_join(na.omit(df2), by = "term") %>% 
   left_join(na.omit(df3), by = "term") %>% 
   left_join(na.omit(df4), by = "term") %>% 
@@ -511,7 +522,7 @@ output <- na.omit(df1) %>%
   write_csv("analysis/dspan02_imputed tdcm change results.csv")
 
 #-------------------------------------------------------------------
-tdcm_change_var7 <- coxph(Surv(tstart, tstop, event) ~ baseline_hba1c + baseline_homa2b + baseline_homa2ir + baseline_ldlc 
+overall_change_var7 <- coxph(Surv(tstart, tstop, event) ~ baseline_hba1c + baseline_homa2b + baseline_homa2ir + baseline_ldlc 
                      + baseline_bmi + baseline_sbp + baseline_egfr
                      + change_hba1c + change_homa2b + change_homa2ir + change_ldlc 
                      + change_bmi + change_sbp + change_egfr, data = tdcm_df)
@@ -537,6 +548,7 @@ sird_change_var7 <- coxph(Surv(tstart, tstop, sird) ~ baseline_hba1c + baseline_
                      + change_bmi + change_sbp + change_egfr, data = tdcm_df)
 
 tdcm_change_results <- bind_rows(
+  broom::tidy(overall_change_var7) %>% mutate(model = "Overall"),
   broom::tidy(mard_change_var7) %>% mutate(model = "MARD"),
   broom::tidy(mod_change_var7) %>% mutate(model = "MOD"),
   broom::tidy(sidd_change_var7) %>% mutate(model = "SIDD"),
@@ -548,8 +560,10 @@ tdcm_change_output <- tdcm_change_results %>%
          uci = exp(estimate + 1.96 * std.error)) %>% 
   mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
   pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, MARD, MOD, SIDD, SIRD) 
+  dplyr::select(term, Overall, MARD, MOD, SIDD, SIRD) 
 
+df0 <- tdcm_change_output %>% 
+  dplyr::select(term, Overall) 
 df1 <- tdcm_change_output %>% 
   dplyr::select(term, MARD) 
 df2 <- tdcm_change_output %>% 
@@ -559,7 +573,8 @@ df3 <- tdcm_change_output %>%
 df4 <- tdcm_change_output %>% 
   dplyr::select(term, SIRD)
 
-output <- na.omit(df1) %>% 
+output <- na.omit(df0) %>% 
+  left_join(na.omit(df1), by = "term") %>% 
   left_join(na.omit(df2), by = "term") %>% 
   left_join(na.omit(df3), by = "term") %>% 
   left_join(na.omit(df4), by = "term") %>% 
