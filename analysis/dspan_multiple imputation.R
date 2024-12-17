@@ -2,7 +2,7 @@ rm(list = ls());gc();source(".Rprofile")
 
 source("functions/egfr_ckdepi_2021.R")
 
-analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01_analytic df.RDS")) %>% 
+analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>% 
   mutate(race_eth = as.factor(race_eth),
          # To avoid the warning that 'Imputation method logreg is for categorical data' -- we can convert it back later
          female = factor(female,levels=c(0,1))) 
@@ -61,11 +61,11 @@ pred[,id_vars] <- 0
 mi_dfs <- mice(before_imputation,
                method = method,
                pred = pred,
-               m=1,maxit=50,seed=500)
+               m=10,maxit=50,seed=500)
 
-df <- complete(mi_dfs, action = 1)
+#df <- complete(mi_dfs, action = 1)
 
-df$egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = df$serumcreatinine,female = df$female,age = df$age)
+mi_dfs$egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = mi_dfs$serumcreatinine,female = mi_dfs$female,age = df$age)
 
 
-saveRDS(df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
+saveRDS(mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
