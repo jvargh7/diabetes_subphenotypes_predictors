@@ -1,15 +1,11 @@
 rm(list = ls());gc();source(".Rprofile")
 
-# all participants without diagnosed T2D at baseline
-all_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>%
+# restrict to 15y follow-up time for all 
+fup15y <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>%
   group_by(study, study_id) %>%
   mutate(min_age = min(age)) %>%
   # Restrict to observations within 15 years of earliest age
   dplyr::filter(age <= (min_age + 15)) %>%
-  # There are individuals whose dmagediag < minimum age
-  # exclude people being diagnosed at baseline (1st visit)
-  dplyr::filter(is.na(dmagediag) | ((age <= dmagediag) & (min_age != dmagediag))) %>% 
-  
   mutate(event = case_when(# Individuals who are never diagnosed
     is.na(dmagediag) ~ 0,
     
@@ -19,47 +15,105 @@ all_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working
     # Individuals who are diagnosed after 15 years of earliest wave
     TRUE ~ 0
     
-  )) %>%
+  )) %>% 
+  ungroup() %>% 
+  # create unique id, easier to count N; N = 30374
+  mutate(joint_id = paste(study, study_id, sep = "_"))
+
+#------------------------------------------------------------
+# no T2D within 15y follow-up time - censored, N = 24310
+nodm15y <- fup15y %>% 
+  group_by(study, study_id) %>%
+  dplyr::filter(event == 0) %>% 
   ungroup()
 
 # obs
-table(all_df$study)
-table(all_df$event, all_df$study)
+table(nodm15y$study)
+table(nodm15y$event, nodm15y$study)
 
 # N
-all_df %>%
+nodm15y %>%
   group_by(study) %>%
-  summarise(total_unique_ids = n_distinct(study_id))
+  summarise(total_unique_ids = n_distinct(joint_id))
 
-all_df %>%
+nodm15y %>%
   dplyr::filter(event %in% c(0, 1)) %>%
   group_by(study, event) %>%
-  summarise(total_unique_ids = n_distinct(study_id), .groups = "drop")
-  
-#------------------------------------------------------------------------------------
-# at least 1 visit time before diagnosis
-mt1vst <- all_df %>% 
-  dplyr::filter((event == 1 & dmagediag > age) | event == 0)
-  
+  summarise(total_unique_ids = n_distinct(joint_id), .groups = "drop")
+
+
+# at least have 2 wave
+nodm2wv <- nodm15y %>% 
+  group_by(study, study_id) %>%
+  dplyr::filter(!is.na(age) & age >= min_age) %>% 
+  add_count(joint_id, name = "count_valid_ages") %>%
+  # Only keep those groups with at least 2 non-missing ages
+  dplyr::filter(count_valid_ages >= 2) %>%
+  # Optionally remove the helper columns if they are no longer needed
+  select(-min_age, -count_valid_ages) %>%
+  ungroup()
+
 # obs
-table(mt1vst$study)
-table(mt1vst$event, mt1vst$study)
+table(nodm2wv$study)
+table(nodm2wv$event, nodm2wv$study)
 
 # N
-mt1vst %>%
+nodm2wv %>%
   group_by(study) %>%
-  summarise(total_unique_ids = n_distinct(study_id))
+  summarise(total_unique_ids = n_distinct(joint_id))
 
-mt1vst %>%
+nodm2wv %>%
   dplyr::filter(event %in% c(0, 1)) %>%
   group_by(study, event) %>%
-  summarise(total_unique_ids = n_distinct(study_id), .groups = "drop")
+  summarise(total_unique_ids = n_distinct(joint_id), .groups = "drop")
 
-#------------------------------------------------------------------------------------
-# with available cluster
-clus_ava <- mt1vst %>% 
-  dplyr::filter((event == 1 & !is.na(bmi) & !is.na(hba1c)) | event == 0)
-  
+#------------------------------------------------------------
+# T2D within 15y follow-up time
+
+# not diagnosed at baseline, N = 4933
+dm15y <- fup15y %>% 
+  group_by(study, study_id) %>%
+  dplyr::filter(event == 1) %>% 
+  # There are individuals whose dmagediag < minimum age
+  # exclude people being diagnosed at baseline (1st visit)
+  dplyr::filter((age <= dmagediag) & (min_age != dmagediag)) %>% 
+  ungroup()
+
+# obs
+table(dm15y$study)
+table(dm15y$event, dm15y$study)
+
+# N
+dm15y %>%
+  group_by(study) %>%
+  summarise(total_unique_ids = n_distinct(joint_id))
+
+dm15y %>%
+  dplyr::filter(event %in% c(0, 1)) %>%
+  group_by(study, event) %>%
+  summarise(total_unique_ids = n_distinct(joint_id), .groups = "drop")
+
+
+# available bmi & a1c at diagnosis age, N = 748
+clus_avaid <- dm15y %>% 
+  dplyr::filter(study != "dppos") %>% 
+  group_by(study, study_id) %>%
+  dplyr::filter((age == dmagediag) & !is.na(bmi) & !is.na(hba1c)) %>% 
+  ungroup()
+
+# N = 1387
+clus_avaid_dpp <- dm15y %>% 
+  dplyr::filter(study == "dppos") %>% 
+  mutate(age_int = as.integer(age),
+         dmagediag_int = as.integer(dmagediag)) %>% 
+  group_by(study, study_id) %>%
+  dplyr::filter((age_int == dmagediag_int) & !is.na(bmi) & !is.na(hba1c)) %>% 
+  ungroup()
+
+# N = 2135
+clus_ava <- dm15y %>% 
+  dplyr::filter((joint_id %in% clus_avaid$joint_id) | (joint_id %in% clus_avaid_dpp$joint_id))
+
 # obs
 table(clus_ava$study)
 table(clus_ava$event, clus_ava$study)
@@ -67,13 +121,68 @@ table(clus_ava$event, clus_ava$study)
 # N
 clus_ava %>%
   group_by(study) %>%
-  summarise(total_unique_ids = n_distinct(study_id))
+  summarise(total_unique_ids = n_distinct(joint_id))
 
 clus_ava %>%
   dplyr::filter(event %in% c(0, 1)) %>%
   group_by(study, event) %>%
-  summarise(total_unique_ids = n_distinct(study_id), .groups = "drop") 
-  
-  
-  
-  
+  summarise(total_unique_ids = n_distinct(joint_id), .groups = "drop")
+
+#------------------------------------------------------------------------
+# 64 + 190 = 254 ppl don't have visit age that at the same year of their diagnosis
+df <- dm15y %>% 
+  dplyr::filter(study != "dppos") %>% 
+  group_by(study, study_id) %>%
+  mutate(no_age_equals_dmagediag = all(age != dmagediag)) %>%
+  # Filter to keep only groups where no age equals dmagediag
+  dplyr::filter(no_age_equals_dmagediag) %>%
+  # Remove the helper column as it's no longer needed
+  select(study,study_id,joint_id,age,dmagediag,no_age_equals_dmagediag) %>%
+  # Ungroup to prevent accidental grouping effects in later analysis
+  ungroup()
+
+df_dpp <- dm15y %>% 
+  dplyr::filter(study == "dppos") %>% 
+  mutate(age_int = as.integer(age),
+         dmagediag_int = as.integer(dmagediag)) %>% 
+  group_by(study, study_id) %>%
+  mutate(no_age_equals_dmagediag = all(age_int != dmagediag_int)) %>%
+  # Filter to keep only groups where no age equals dmagediag
+  dplyr::filter(no_age_equals_dmagediag) %>%
+  # Remove the helper column as it's no longer needed
+  select(study,study_id,joint_id,age,dmagediag,no_age_equals_dmagediag) %>%
+  # Ungroup to prevent accidental grouping effects in later analysis
+  ungroup()
+
+#------------------------------------------------------------------------
+# at least have 1 wave before diagnosis, N = 1731
+dm1wv <- clus_ava %>% 
+  group_by(study, study_id) %>%
+  mutate(has_age_before_dmagediag = any(age < dmagediag)) %>%
+  # Filter groups that have at least one valid age record before dmagediag
+  dplyr::filter(has_age_before_dmagediag) %>%
+  # Remove the helper column if not needed further
+  select(-has_age_before_dmagediag) %>%
+  ungroup()
+
+# obs
+table(dm1wv$study)
+table(dm1wv$event, dm1wv$study)
+
+# N
+dm1wv %>%
+  group_by(study) %>%
+  summarise(total_unique_ids = n_distinct(joint_id))
+
+dm1wv %>%
+  dplyr::filter(event %in% c(0, 1)) %>%
+  group_by(study, event) %>%
+  summarise(total_unique_ids = n_distinct(joint_id), .groups = "drop")
+
+
+
+
+
+
+
+
