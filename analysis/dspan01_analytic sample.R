@@ -4,6 +4,7 @@ library(purrr)
 library(readr)
 library(writexl)
 
+# new dm + no dm
 final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/final_dataset_temp.RDS"))
 aric_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS")) %>% 
   mutate(study = "aric")

@@ -76,7 +76,7 @@ dm15y <- fup15y %>%
   dplyr::filter(event == 1) %>% 
   # There are individuals whose dmagediag < minimum age
   # exclude people being diagnosed at baseline (1st visit)
-  dplyr::filter((age <= dmagediag) & (min_age != dmagediag)) %>% 
+  dplyr::filter((age <= dmagediag) & (min_age < dmagediag)) %>% 
   ungroup()
 
 # obs

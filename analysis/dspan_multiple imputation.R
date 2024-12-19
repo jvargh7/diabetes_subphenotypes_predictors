@@ -25,7 +25,8 @@ proportion_vars <- c("female")
 grouped_vars <- c("study","race_eth")
 
 # Moved dmagediag to an ID variable
-id_vars <- c("study_id",  "visit", "year", "exam", "cluster_study_id", "newdm", "dmagediag","diagDays", "anthro_StudyDays", "lab_StudyDays")
+id_vars <- c("study_id",  "visit", "year", "exam", "cluster_study_id", "cluster", "newdm", "dmagediag",
+             "diagDays", "anthro_StudyDays", "lab_StudyDays")
 
 library(survey)
 library(mice)
