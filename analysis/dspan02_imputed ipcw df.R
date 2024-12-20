@@ -85,7 +85,7 @@ for(i in 1:mi_dfs$m) {
                                     TRUE ~ 1/(1-prob_cluster_fup))) %>% 
     distinct(joint_id, .keep_all = TRUE)
   
-  ipcw_df <- wave_df %>%
+  ipcw_df <- cluster_ava %>%
     left_join(dm_weight %>% select(study,study_id,joint_id,ipcw_cluster), by = c("joint_id","study","study_id")) %>% 
     mutate(ipcw_cluster = case_when(is.na(ipcw_cluster) ~ 1,
                                     TRUE ~ ipcw_cluster))

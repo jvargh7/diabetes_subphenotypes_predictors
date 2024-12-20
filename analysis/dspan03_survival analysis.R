@@ -16,6 +16,7 @@ sidd_cp <- list()
 sird_cp <- list()
 cp_results <- list()
 cp_output <- list()
+df0 <- list()
 df1 <- list()
 df2 <- list()
 df3 <- list()
@@ -78,6 +79,8 @@ for (i in 1:length(ipcw_dfs)) {
     pivot_wider(names_from = model, values_from = coef_ci) %>% 
     dplyr::select(term, MARD, MOD, SIDD, SIRD) 
   
+  df0[[i]] <- cp_output[[i]] %>% 
+    dplyr::select(term, Overall) 
   df1[[i]] <- cp_output[[i]] %>% 
     dplyr::select(term, MARD) 
   df2[[i]] <- cp_output[[i]] %>% 
@@ -87,7 +90,8 @@ for (i in 1:length(ipcw_dfs)) {
   df4[[i]] <- cp_output[[i]] %>% 
     dplyr::select(term, SIRD)
   
-  coxph_output[[i]] <- na.omit(df1[[i]]) %>% 
+  coxph_output[[i]] <- na.omit(df0[[i]]) %>% 
+    left_join(na.omit(df1[[i]]), by = "term") %>%
     left_join(na.omit(df2[[i]]), by = "term") %>% 
     left_join(na.omit(df3[[i]]), by = "term") %>% 
     left_join(na.omit(df4[[i]]), by = "term") %>% 
@@ -109,6 +113,7 @@ sidd_tdcm <- list()
 sird_tdcm <- list()
 tdcm_results <- list()
 tdcm_output <- list()
+df0 <- list()
 df1 <- list()
 df2 <- list()
 df3 <- list()
@@ -168,6 +173,7 @@ for (i in 1:length(ipcw_dfs)) {
   
   
   tdcm_results[[i]] <- bind_rows(
+    broom::tidy(overall_tdcm[[i]]) %>% mutate(model = "Overall"),
     broom::tidy(mard_tdcm[[i]]) %>% mutate(model = "MARD"),
     broom::tidy(mod_tdcm[[i]]) %>% mutate(model = "MOD"),
     broom::tidy(sidd_tdcm[[i]]) %>% mutate(model = "SIDD"),
@@ -182,6 +188,8 @@ for (i in 1:length(ipcw_dfs)) {
     pivot_wider(names_from = model, values_from = coef_ci) %>% 
     dplyr::select(term, MARD, MOD, SIDD, SIRD) 
   
+  df0[[i]] <- tdcm_output[[i]] %>% 
+    dplyr::select(term, Overall)
   df1[[i]] <- tdcm_output[[i]] %>% 
     dplyr::select(term, MARD) 
   df2[[i]] <- tdcm_output[[i]] %>% 
@@ -191,7 +199,8 @@ for (i in 1:length(ipcw_dfs)) {
   df4[[i]] <- tdcm_output[[i]] %>% 
     dplyr::select(term, SIRD)
   
-  output[[i]] <- na.omit(df1[[i]]) %>% 
+  tdcmfinal_output[[i]] <- na.omit(df0[[i]]) %>% 
+    left_join(na.omit(df1[[i]]), by = "term") %>% 
     left_join(na.omit(df2[[i]]), by = "term") %>% 
     left_join(na.omit(df3[[i]]), by = "term") %>% 
     left_join(na.omit(df4[[i]]), by = "term") %>% 
@@ -199,7 +208,7 @@ for (i in 1:length(ipcw_dfs)) {
 
 }
 
-tdcm_output_results <- bind_rows(output) %>% 
+tdcm_output_results <- bind_rows(tdcmfinal_output) %>% 
   write_csv(.,"analysis/dspan03_tdcm with multiple imputation.csv")
 
 #--------------------------------------------------------------------------------------------------------------------
@@ -212,7 +221,7 @@ sidd_mix <- list()
 sird_mix <- list()
 
 for (i in 1:length(ipcw_dfs)) {
-  df <- ipcw_dfs[[i]] 
+  df <- ipcw_dfs[[1]] 
   
   cluster_df <- df %>% 
     mutate(mard = case_when(cluster == "MARD" ~ 1,
@@ -222,11 +231,13 @@ for (i in 1:length(ipcw_dfs)) {
            sidd = case_when(cluster == "SIDD" ~ 1,
                             TRUE ~ 0),
            sird = case_when(cluster == "SIRD" ~ 1,
-                            TRUE ~ 0))
+                            TRUE ~ 0)) %>% 
+    mutate(time_qua = time_to_event^2,
+           time_cub = time_to_event^3)
   
   
   overall_mix[[i]] <- glmer(event ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
-                             + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
+                             + homa2ir + ldlc + sbp + egfr_ckdepi_2021,
                              data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   mard_mix[[i]] <- glmer(mard ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
@@ -247,20 +258,6 @@ for (i in 1:length(ipcw_dfs)) {
   
   
 }
-
-
-
-overall_mix_out = clean_mi_contrasts(overall_mix,link="glmer log")
-
-
-
-
-
-
-
-
-
-
 
 
 
