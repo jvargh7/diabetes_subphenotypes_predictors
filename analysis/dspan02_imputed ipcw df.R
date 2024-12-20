@@ -5,17 +5,19 @@ library(purrr)
 library(emmeans)
 library(contrast)
 
+source("functions/egfr_ckdepi_2021.R")
 mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
+
 
 ipcw_dfs <- list()
 
 for(i in 1:mi_dfs$m) {
-  df <- complete(mi_dfs, action = 1) 
+  df <- complete(mi_dfs, action = i) 
   
   fup15y <- df %>%
+    mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age)) %>% 
     group_by(study, study_id) %>%
-    mutate(min_age = min(age),
-           race = race_eth) %>%
+    mutate(min_age = min(age)) %>%
     # Restrict to observations within 15 years of earliest age
     dplyr::filter(age <= (min_age + 15)) %>%
     mutate(event = case_when(# Individuals who are never diagnosed
@@ -66,53 +68,33 @@ for(i in 1:mi_dfs$m) {
     dplyr::filter((joint_id %in% cluster_avaid$joint_id))
   
   
-  ipcw_dfs[[i]] <- cluster_ava
+  
+  # apply IPCW for people without cluster
+  dm_df <- wave_df %>% 
+    dplyr::filter(event == 1) %>% 
+    mutate(clu_available = case_when(joint_id %in% cluster_avaid$joint_id ~ 1,
+                                     TRUE ~ 0))
+  
+  ltfu_equation <- clu_available ~ study + female + race + min_age
+  ltfu_cluster_model <- glm(ltfu_equation, data = dm_df, family = "binomial")
+  dm_df$prob_cluster_fup = predict(ltfu_cluster_model,newdata=dm_df,type="response")
+  
+  
+  dm_weight <- dm_df %>%
+    mutate(ipcw_cluster = case_when(clu_available == 1 ~ 1/prob_cluster_fup,
+                                    TRUE ~ 1/(1-prob_cluster_fup))) %>% 
+    distinct(joint_id, .keep_all = TRUE)
+  
+  ipcw_df <- wave_df %>%
+    left_join(dm_weight %>% select(study,study_id,joint_id,ipcw_cluster), by = c("joint_id","study","study_id")) %>% 
+    mutate(ipcw_cluster = case_when(is.na(ipcw_cluster) ~ 1,
+                                    TRUE ~ ipcw_cluster))
+  
+  
+  ipcw_dfs[[i]] <- ipcw_df
 }
 
 saveRDS(ipcw_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/ipcw_dfs.RDS"))
-
-
-
-
-### FIX #######
-
-# apply IPCW for people without cluster
-dm_df <- wave_df %>% 
-  dplyr::filter(event == 1) %>% 
-  mutate(clu_ava = case_when(joint_id %in% cluster_avaid$joint_id ~ 1,
-                             TRUE ~ 0))
-
-censor_model <- glm(clu_ava ~ study + female + race + min_age, data = dm_df, family = "binomial")
-
-
-
-dm_df1 <- dm_df %>%
-  mutate(prob_uncensored = predict(censor_model, type = "response")
-         # ,
-         # ipcw = if_else(clu_ava == 1, 1 / prob_uncensored, 1 / (1 - prob_uncensored))
-  )
-
-# Merge the IPCW weights back to the original dataset
-ipc_weights <- dm_df %>% 
-  select(joint_id, ipcw)  # Select only necessary columns
-
-wave_df <- wave_df %>%
-  left_join(ipc_weights, by = "joint_id") %>% 
-  mutate(ipcw = if_else(is.na(ipcw), 1, ipcw))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

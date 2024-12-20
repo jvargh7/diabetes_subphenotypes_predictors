@@ -9,9 +9,15 @@ library(lme4)
 
 ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/ipcw_dfs.RDS"))
 
+overall_cp <- list()
+mard_cp <- list()
+mod_cp <- list()
+sidd_cp <- list()
+sird_cp <- list()
+
 # Cox PH model
-for (i in 1:ipcw_dfs$m) {
-  df <- complete(mi_dfs, action = i) 
+for (i in 1:length(ipcw_dfs)) {
+  df <- ipcw_dfs[[i]]  
   
   cluster_df <- df %>% 
     mutate(mard = case_when(cluster == "MARD" ~ 1,
@@ -31,23 +37,23 @@ for (i in 1:ipcw_dfs$m) {
   
   overall_cp[[i]] <- coxph(Surv(time_to_event, event) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                            + ldlc + sbp + egfr_ckdepi_2021, 
-                           data = cross_df, weights = ipcw_weights)
+                           data = cross_df, weights = ipcw_cluster)
   
   mard_cp[[i]] <- coxph(Surv(time_to_event, mard) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
-                        data = cross_df, weights = ipcw_weights)
+                        data = cross_df, weights = ipcw_cluster)
   
   mod_cp[[i]] <- coxph(Surv(time_to_event, mod) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                        + ldlc + sbp + egfr_ckdepi_2021, 
-                       data = cross_df, weights = ipcw_weights)
+                       data = cross_df, weights = ipcw_cluster)
   
   sidd_cp[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
-                        data = cross_df, weights = ipcw_weights)
+                        data = cross_df, weights = ipcw_cluster)
   
   sird_cp[[i]] <- coxph(Surv(time_to_event, sird) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
-                        data = cross_df, weights = ipcw_weights)
+                        data = cross_df, weights = ipcw_cluster)
   
   
 }
@@ -71,8 +77,14 @@ overall_cp_out = clean_mi_contrasts(overall_cp,link="coxph")
 #--------------------------------------------------------------------------------------------------------------------
 # TDCM - longitudinal data
 
-for (i in 1:ipcw_dfs$m) {
-  df <- complete(mi_dfs, action = i) 
+overall_tdcm <- list()
+mard_tdcm <- list()
+mod_tdcm <- list()
+sidd_tdcm <- list()
+sird_tdcm <- list()
+
+for (i in 1:length(ipcw_dfs)) {
+  df <- ipcw_dfs[[1]]  
   
   cluster_df <- df %>% 
     mutate(mard = case_when(cluster == "MARD" ~ 1,
@@ -99,23 +111,23 @@ for (i in 1:ipcw_dfs$m) {
   
   overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                              + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                             data = tdcm_df, weights = ipcw_weights)
+                             data = tdcm_df, weights = ipcw_cluster)
   
   mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                          data = tdcm_df, weights = ipcw_weights)
+                          data = tdcm_df, weights = ipcw_cluster)
   
   mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                         data = tdcm_df, weights = ipcw_weights)
+                         data = tdcm_df, weights = ipcw_cluster)
   
   sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                          data = tdcm_df, weights = ipcw_weights)
+                          data = tdcm_df, weights = ipcw_cluster)
   
   sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                          data = tdcm_df, weights = ipcw_weights)
+                          data = tdcm_df, weights = ipcw_cluster)
   
   
 }
@@ -125,8 +137,14 @@ for (i in 1:ipcw_dfs$m) {
 #--------------------------------------------------------------------------------------------------------------------
 # mixed effect model
 
-for (i in 1:ipcw_dfs$m) {
-  df <- complete(mi_dfs, action = i) 
+overall_mix <- list()
+mard_mix <- list()
+mod_mix <- list()
+sidd_mix <- list()
+sird_mix <- list()
+
+for (i in 1:length(ipcw_dfs)) {
+  df <- ipcw_dfs[[i]] 
   
   cluster_df <- df %>% 
     mutate(mard = case_when(cluster == "MARD" ~ 1,
@@ -141,23 +159,23 @@ for (i in 1:ipcw_dfs$m) {
   
   overall_mix[[i]] <- glmer(event ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
                              + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                             data = tdcm_df, weights = ipcw_weights, family = binomial(link = "logit"))
+                             data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   mard_mix[[i]] <- glmer(mard ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                         data = tdcm_df, weights = ipcw_weights, family = binomial(link = "logit"))
+                         data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   mod_mix[[i]] <- glmer(mod ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
                         + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                        data = tdcm_df, weights = ipcw_weights, family = binomial(link = "logit"))
+                        data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   sidd_mix[[i]] <- glmer(sidd ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                         data = tdcm_df, weights = ipcw_weights, family = binomial(link = "logit"))
+                         data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   sird_mix[[i]] <- glmer(sird ~ time_to_event + (1|study) + female + race + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
-                         data = tdcm_df, weights = ipcw_weights, family = binomial(link = "logit"))
+                         data = cluster_df, weights = ipcw_cluster, family = binomial(link = "logit"))
   
   
 }
