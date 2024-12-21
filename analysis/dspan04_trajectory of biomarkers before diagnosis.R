@@ -70,6 +70,7 @@ library(lme4)
 m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + max_age + female + study + race + (1|joint_id), data = wave_df)
 m2 = lmer(bmi ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
 m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
+m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
 
 
 library(emmeans)
@@ -81,16 +82,19 @@ out1 = ggpredict(m1, c("t [all]", "subtype"))
 # Message: Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the transformed scale.
 out2 = ggpredict(m2, c("t [all]", "subtype"))
 out3 = ggpredict(m3, c("t [all]", "subtype"))
+out4 = ggpredict(m4, c("t [all]", "subtype"))
 
 bind_rows(out1 %>% mutate(outcome = "HOMA2B"),
           out2 %>% mutate(outcome = "BMI"),
-          out3 %>% mutate(outcoem = "HbA1c")) %>% 
+          out3 %>% mutate(outcoem = "HbA1c"),
+          out4 %>% mutate(outcoem = "HOMA2IR")
+          ) %>% 
   write_csv(.,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv"))
 
 cluster_not2d_colors = c(cluster_colors,"#AC94F4")
 names(cluster_not2d_colors) = c(cluster_labels,"No T2D")
 
-fig_loghoma2b = out1 %>% 
+fig_homa2b = out1 %>% 
   as.data.frame() %>% 
   mutate(cluster = factor(group,levels=c("NOT2D","SIDD","SIRD","MOD","MARD"),
                           labels=c("No T2D","SIDD","SIRD","MOD","MARD"))) %>% 
@@ -101,6 +105,8 @@ fig_loghoma2b = out1 %>%
   xlab("Time (years)") +
   ylab("HOMA2-%B") +
   scale_color_manual(name="",values=cluster_not2d_colors)
+
+
 
 fig_bmi = out2 %>%
   as.data.frame() %>% 
@@ -128,11 +134,27 @@ fig_hba1c = out3 %>%
   ylab("HbA1c (%)") +
   scale_color_manual(name="",values=cluster_not2d_colors)
 
+fig_homa2ir = out4 %>% 
+  as.data.frame() %>% 
+  mutate(cluster = factor(group,levels=c("NOT2D","SIDD","SIRD","MOD","MARD"),
+                          labels=c("No T2D","SIDD","SIRD","MOD","MARD"))) %>% 
+  ggplot(data=.,aes(x=x,y=predicted,ymin=conf.low,ymax=conf.high,col=cluster)) +
+  geom_path() +
+  geom_ribbon(fill=NA,linetype = 2) +
+  theme_bw() + 
+  xlab("Time (years)") +
+  ylab("HOMA2-IR") +
+  scale_color_manual(name="",values=cluster_not2d_colors)
+
+
 
 library(ggpubr)
-ggarrange(fig_loghoma2b,fig_bmi,
-          fig_hba1c,nrow=3,ncol=1,labels=LETTERS[1:3],common.legend = TRUE,legend = "bottom") %>% 
-  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/trajectory of biomarkers before diagnosis.jpg"),width = 6,height = 8)
+ggarrange(fig_bmi,
+          fig_hba1c,
+          fig_homa2b,
+          fig_homa2ir,
+          nrow=2,ncol=2,labels=LETTERS[1:4],common.legend = TRUE,legend = "bottom") %>% 
+  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/trajectory of biomarkers before diagnosis.jpg"),width = 6,height = 6)
 
 
 
