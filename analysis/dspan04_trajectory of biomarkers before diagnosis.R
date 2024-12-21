@@ -21,8 +21,8 @@ source("functions/egfr_ckdepi_2021.R")
 # https://stats.stackexchange.com/questions/109369/how-can-i-estimate-model-predicted-means-a-k-a-marginal-means-lsmeans-or-em
 
 # new dm
-final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/final_dataset_temp.RDS")) %>% 
-  mutate(joint_id = paste(study, study_id, sep = "_"))
+final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/final_dataset_temp.RDS")) %>%
+  mutate(joint_id = paste(study, original_study_id, sep = "_"))
 
 analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>% 
   mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
@@ -35,8 +35,8 @@ analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
   group_by(study,study_id,joint_id) %>% 
   mutate(max_age = case_when(newdm_event == 1 ~ dmagediag,
                              TRUE ~ max(age)),
-         t = max_age - age) %>% 
-  dplyr::filter(t >= 0 & t <= 15) %>% 
+         t = age - max_age) %>% 
+  dplyr::filter(t <= 0 & t >= -15) %>% 
   ungroup()
 
 wave_df <- analytic_df %>% 
@@ -47,21 +47,92 @@ wave_df <- analytic_df %>%
   mutate(subtype = case_when(is.na(dmagediag) ~ "NOT2D",
                              !is.na(cluster) ~ cluster,
                              TRUE ~ NA_character_)) %>% 
-  ungroup()
+  ungroup() %>% 
+  arrange(joint_id,t) %>% 
+  distinct(joint_id,t,.keep_all=TRUE) %>% 
+  mutate(across(one_of(c("subtype","race","study")),.fns=~as.factor(.)))
   
+summary(wave_df[,c("homa2b","t","subtype","max_age","female","study","race")])
+table(wave_df$subtype,useNA="always")
+
+
 
 library(splines)
-library(geepack)
-m1 = geeglm(homa2b ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "exchangeable")
-m2 = geeglm(bmi ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "exchangeable")
-m3 = geeglm(hba1c ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "exchangeable")
+emm_options(pbkrtest.limit = 999999)
+
+# library(geepack)
+# m1a = geeglm(homa2b ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+# m2 = geeglm(bmi ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+# m3 = geeglm(hba1c ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+ 
+
+library(lme4)
+m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + max_age + female + study + race + (1|joint_id), data = wave_df)
+m2 = lmer(bmi ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
+m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
 
 
+library(emmeans)
+library(ggeffects)
+# https://stackoverflow.com/questions/77811491/how-to-perform-piecewise-linear-mixed-regression-with-multiple-breakpoints-in-r
+
+# The below take a long time to fit -- ~ 5 mins per row -------------------
+out1 = ggpredict(m1, c("t [all]", "subtype"))
+# Message: Model has log-transformed response. Back-transforming predictions to original response scale. Standard errors are still on the transformed scale.
+out2 = ggpredict(m2, c("t [all]", "subtype"))
+out3 = ggpredict(m3, c("t [all]", "subtype"))
+
+bind_rows(out1 %>% mutate(outcome = "HOMA2B"),
+          out2 %>% mutate(outcome = "BMI"),
+          out3 %>% mutate(outcoem = "HbA1c")) %>% 
+  write_csv(.,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv"))
+
+cluster_not2d_colors = c(cluster_colors,"#AC94F4")
+names(cluster_not2d_colors) = c(cluster_labels,"No T2D")
+
+fig_loghoma2b = out1 %>% 
+  as.data.frame() %>% 
+  mutate(cluster = factor(group,levels=c("NOT2D","SIDD","SIRD","MOD","MARD"),
+                          labels=c("No T2D","SIDD","SIRD","MOD","MARD"))) %>% 
+  ggplot(data=.,aes(x=x,y=predicted,ymin=conf.low,ymax=conf.high,col=cluster)) +
+  geom_path() +
+  geom_ribbon(fill=NA,linetype = 2) +
+  theme_bw() + 
+  xlab("Time (years)") +
+  ylab("HOMA2-%B") +
+  scale_color_manual(name="",values=cluster_not2d_colors)
+
+fig_bmi = out2 %>%
+  as.data.frame() %>% 
+  
+  mutate(cluster = factor(group,levels=c("NOT2D","SIDD","SIRD","MOD","MARD"),
+                          labels=c("No T2D","SIDD","SIRD","MOD","MARD"))) %>% 
+  ggplot(data=.,aes(x=x,y=predicted,ymin=conf.low,ymax=conf.high,col=cluster)) +
+  geom_path() +
+  geom_ribbon(fill=NA,linetype = 2) +
+  theme_bw() + 
+  xlab("Time (years)") +
+  ylab("BMI (kg/m2)") +
+  scale_color_manual(name="",values=cluster_not2d_colors)
+
+fig_hba1c = out3 %>%
+  as.data.frame() %>% 
+  
+  mutate(cluster = factor(group,levels=c("NOT2D","SIDD","SIRD","MOD","MARD"),
+                          labels=c("No T2D","SIDD","SIRD","MOD","MARD"))) %>% 
+  ggplot(data=.,aes(x=x,y=predicted,ymin=conf.low,ymax=conf.high,col=cluster)) +
+  geom_path() +
+  geom_ribbon(fill=NA,linetype = 2) +
+  theme_bw() + 
+  xlab("Time (years)") +
+  ylab("HbA1c (%)") +
+  scale_color_manual(name="",values=cluster_not2d_colors)
 
 
-
-
-
+library(ggpubr)
+ggarrange(fig_loghoma2b,fig_bmi,
+          fig_hba1c,nrow=3,ncol=1,labels=LETTERS[1:3],common.legend = TRUE,legend = "bottom") %>% 
+  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/trajectory of biomarkers before diagnosis.jpg"),width = 6,height = 8)
 
 
 
