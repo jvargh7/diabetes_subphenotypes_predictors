@@ -55,9 +55,25 @@ wave_df <- analytic_df %>%
 summary(wave_df[,c("homa2b","t","subtype","max_age","female","study","race")])
 table(wave_df$subtype,useNA="always")
 
+wave_df %>% 
+  group_by(subtype) %>% 
+  distinct(study,study_id,joint_id) %>% 
+  tally()
 
+ind_df = wave_df %>% 
+  group_by(study,study_id) %>% 
+  dplyr::filter(t == max(t)) %>% 
+  ungroup()
+
+ind_df %>% 
+  group_by(subtype == "NOT2D") %>% 
+  summarize(age = mean(max_age),
+            sd_age = sd(max_age),
+            female = mean(female))
 
 library(splines)
+library(emmeans)
+library(ggeffects)
 emm_options(pbkrtest.limit = 999999)
 
 # library(geepack)
@@ -73,8 +89,7 @@ m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|j
 m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
 
 
-library(emmeans)
-library(ggeffects)
+
 # https://stackoverflow.com/questions/77811491/how-to-perform-piecewise-linear-mixed-regression-with-multiple-breakpoints-in-r
 
 # The below take a long time to fit -- ~ 5 mins per row -------------------
@@ -84,10 +99,10 @@ out2 = ggpredict(m2, c("t [all]", "subtype"))
 out3 = ggpredict(m3, c("t [all]", "subtype"))
 out4 = ggpredict(m4, c("t [all]", "subtype"))
 
-bind_rows(out1 %>% mutate(outcome = "HOMA2B"),
-          out2 %>% mutate(outcome = "BMI"),
-          out3 %>% mutate(outcoem = "HbA1c"),
-          out4 %>% mutate(outcoem = "HOMA2IR")
+bind_rows(out1 %>% as.data.frame() %>%  mutate(outcome = "HOMA2B"),
+          out2 %>% as.data.frame() %>% mutate(outcome = "BMI"),
+          out3 %>% as.data.frame() %>% mutate(outcome = "HbA1c"),
+          out4 %>% as.data.frame() %>% mutate(outcome = "HOMA2IR")
           ) %>% 
   write_csv(.,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv"))
 
@@ -162,6 +177,17 @@ ggarrange(fig_bmi,
 
 
 
+out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv")) %>% 
+  dplyr::filter(x %in% c(-5,0)) %>% 
+  dplyr::select(group,outcome,x,predicted,std.error) %>% 
+  mutate(t = case_when(x == -5 ~ "t5",
+                       x == 0 ~ "t0")) %>% 
+  dplyr::select(-x) %>% 
+  pivot_wider(values_from = c("predicted","std.error"),names_from=c("t")) %>% 
+  mutate(diff = (predicted_t0 - predicted_t5),
+         se_diff = sqrt(std.error_t5^2 + std.error_t0^2)) %>% 
+  mutate(diff_lci = diff - 1.96*se_diff,
+         diff_uci = diff + 1.96*se_diff)
 
 
 
