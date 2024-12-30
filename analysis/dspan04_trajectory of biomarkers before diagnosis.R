@@ -58,7 +58,8 @@ table(wave_df$subtype,useNA="always")
 wave_df %>% 
   group_by(subtype) %>% 
   distinct(study,study_id,joint_id) %>% 
-  tally()
+  tally() %>% 
+  mutate(p = n/sum(n))
 
 ind_df = wave_df %>% 
   group_by(study,study_id) %>% 
@@ -189,6 +190,20 @@ out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/
   mutate(diff_lci = diff - 1.96*se_diff,
          diff_uci = diff + 1.96*se_diff)
 
+not2d_combined = out_combined %>% 
+  dplyr::filter(group == "NOT2D") %>% 
+  dplyr::select(group,outcome,diff,se_diff) %>% 
+  rename(not2d_diff = diff,
+         not2d_se_diff = se_diff)
+
+
+out_combined_not2d = out_combined %>% 
+  left_join(not2d_combined %>% dplyr::select(-group),
+            by = c("outcome")) %>% 
+  mutate(diff_not2d_diff = diff - not2d_diff,
+         se_diff_not2d_diff = sqrt(se_diff^2 + not2d_se_diff^2)) %>% 
+  mutate(diff_not2d_diff_lci = diff_not2d_diff - 1.96*se_diff_not2d_diff,
+         diff_not2d_diff_uci = diff_not2d_diff + 1.96*se_diff_not2d_diff)
 
 
 
