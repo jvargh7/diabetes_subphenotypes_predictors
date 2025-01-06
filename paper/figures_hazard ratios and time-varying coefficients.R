@@ -61,6 +61,7 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
 
 #-------------------------------------------------------------------------------------------------------------------
 # time-varying coefficients plot
+# Fer: https://pmc.ncbi.nlm.nih.gov/articles/PMC6015946/#sec2
 
 ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
