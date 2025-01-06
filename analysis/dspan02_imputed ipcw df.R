@@ -12,7 +12,8 @@ mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working
 ipcw_dfs <- list()
 
 for(i in 1:mi_dfs$m) {
-  df <- complete(mi_dfs, action = i) 
+  df <- complete(mi_dfs, action = i) %>% 
+    dplyr::filter(!study %in% c("aric", "cardia"))
   
   fup15y <- df %>%
     mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age)) %>% 
@@ -94,7 +95,7 @@ for(i in 1:mi_dfs$m) {
   ipcw_dfs[[i]] <- ipcw_df
 }
 
-saveRDS(ipcw_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/ipcw_dfs.RDS"))
+saveRDS(ipcw_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
 
 

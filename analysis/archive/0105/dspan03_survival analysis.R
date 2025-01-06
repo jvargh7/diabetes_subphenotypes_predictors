@@ -4,10 +4,8 @@ library(survival)
 library(survminer)
 library(ggsurvfit)
 library(broom)
-library(tidyr)
-library(lme4)
 
-ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/ipcw_dfs.RDS"))
+ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
 overall_cp <- list()
 mard_cp <- list()
@@ -46,23 +44,23 @@ for (i in 1:length(ipcw_dfs)) {
     mutate(race = case_when(race == "NH Other" ~ "Other", 
                             TRUE ~ race))
   
-  overall_cp[[i]] <- coxph(Surv(time_to_event, event) ~ strata(study) + race + female + age + bmi + hba1c + homa2b + homa2ir 
+  overall_cp[[i]] <- coxph(Surv(time_to_event, event) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                            + ldlc + sbp + egfr_ckdepi_2021, 
                            data = cross_df, weights = ipcw_cluster)
   
-  mard_cp[[i]] <- coxph(Surv(time_to_event, mard) ~ strata(study) + race + female + age + bmi + hba1c + homa2b + homa2ir 
+  mard_cp[[i]] <- coxph(Surv(time_to_event, mard) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
                         data = cross_df, weights = ipcw_cluster)
   
-  mod_cp[[i]] <- coxph(Surv(time_to_event, mod) ~ strata(study) + race + female + age + bmi + hba1c + homa2b + homa2ir 
+  mod_cp[[i]] <- coxph(Surv(time_to_event, mod) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                        + ldlc + sbp + egfr_ckdepi_2021, 
                        data = cross_df, weights = ipcw_cluster)
   
-  sidd_cp[[i]] <- coxph(Surv(time_to_event, sidd) ~ strata(study) + race + female + age + bmi + hba1c + homa2b + homa2ir 
+  sidd_cp[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
                         data = cross_df, weights = ipcw_cluster)
   
-  sird_cp[[i]] <- coxph(Surv(time_to_event, sird) ~ strata(study) + race + female + age + bmi + hba1c + homa2b + homa2ir 
+  sird_cp[[i]] <- coxph(Surv(time_to_event, sird) ~ study + race + female + age + bmi + hba1c + homa2b + homa2ir 
                         + ldlc + sbp + egfr_ckdepi_2021, 
                         data = cross_df, weights = ipcw_cluster)
   
@@ -115,16 +113,11 @@ mard_tdcm <- list()
 mod_tdcm <- list()
 sidd_tdcm <- list()
 sird_tdcm <- list()
-tdcm_results <- list()
-tdcm_output <- list()
-df0 <- list()
-df1 <- list()
-df2 <- list()
-df3 <- list()
-df4 <- list()
-tdcmfinal_output <- list()
 
-for (i in 1:length(ipcw_dfs)) {
+
+D = length(ipcw_dfs)
+
+for (i in 1:D) {
   df <- ipcw_dfs[[i]]  
   
   cluster_df <- df %>% 
@@ -146,123 +139,44 @@ for (i in 1:length(ipcw_dfs)) {
       tstop = age
     ) %>%
     ungroup() %>% 
+    mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # dplyr::filter(tstart < tstop)
     dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
-    mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
                             TRUE ~ race))
 
-  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ strata(study) + female + race + min_age + bmi + hba1c + homa2b 
+  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                              + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                              data = tdcm_df, weights = ipcw_cluster)
   
-  mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ strata(study) + female + race + min_age + bmi + hba1c + homa2b 
+  mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
   
-  mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ strata(study) + female + race + min_age + bmi + hba1c + homa2b 
+  mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                          data = tdcm_df, weights = ipcw_cluster)
   
-  sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ strata(study) + female + race + min_age + bmi + hba1c + homa2b 
+  sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
   
-  sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ strata(study) + female + race + min_age + bmi + hba1c + homa2b 
+  sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ study + female + race + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
-  
-  
 }
 
-tdcm_output_results <- bind_rows(tdcmfinal_output) %>% 
-  write_csv(.,"analysis/dspan03_tdcm with multiple imputation.csv")
 
 
-tdcm_results[[i]] <- bind_rows(
-  broom::tidy(overall_tdcm[[i]]) %>% mutate(model = "Overall"),
-  broom::tidy(mard_tdcm[[i]]) %>% mutate(model = "MARD"),
-  broom::tidy(mod_tdcm[[i]]) %>% mutate(model = "MOD"),
-  broom::tidy(sidd_tdcm[[i]]) %>% mutate(model = "SIDD"),
-  broom::tidy(sird_tdcm[[i]]) %>% mutate(model = "SIRD")) 
-
-# covert to Hazard Ratio
-tdcm_output[[i]] <- tdcm_results[[i]] %>% 
-  mutate(HR = exp(estimate),
-         lci = exp(estimate - 1.96 * std.error),
-         uci = exp(estimate + 1.96 * std.error)) %>% 
-  mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
-  pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, Overall, MARD, MOD, SIDD, SIRD) 
-
-df0[[i]] <- tdcm_output[[i]] %>% 
-  dplyr::select(term, Overall)
-df1[[i]] <- tdcm_output[[i]] %>% 
-  dplyr::select(term, MARD) 
-df2[[i]] <- tdcm_output[[i]] %>% 
-  dplyr::select(term, MOD)
-df3[[i]] <- tdcm_output[[i]] %>% 
-  dplyr::select(term, SIDD)
-df4[[i]] <- tdcm_output[[i]] %>% 
-  dplyr::select(term, SIRD)
-
-tdcmfinal_output[[i]] <- na.omit(df0[[i]]) %>% 
-  left_join(na.omit(df1[[i]]), by = "term") %>% 
-  left_join(na.omit(df2[[i]]), by = "term") %>% 
-  left_join(na.omit(df3[[i]]), by = "term") %>% 
-  left_join(na.omit(df4[[i]]), by = "term") %>% 
-  mutate(model = paste0("m", i))
-
-
-
-
-
-
-
-
-
-
-pool_results <- function(results) {
-  # Extract coefficients and variances
-  betas <- sapply(results, function(x) coef(x))
-  variances <- sapply(results, function(x) vcov(x))
-  
-  # Calculate mean of coefficients
-  mean_betas <- colMeans(betas)
-  
-  # Calculate between and within imputation variance
-  B <- var(betas, na.rm = TRUE) * (nrow(tdcm_df) - 1)  # Between-imputation variance
-  W <- apply(variances, 2, mean)  # Within-imputation variance
-  
-  # Total variance
-  total_variance <- W + (1 + 1 / length(tdcm_df)) * B
-  
-  std_errors <- sqrt(diag(total_variance))
-  
-  terms <- c("female", "race", "min_age", "bmi", "hba1c", "homa2b", "homa2ir", "ldlc", "sbp", "egfr_ckdepi_2021")
-  
-  data.frame(term = terms, Estimate = mean_betas, StdError = std_errors, row.names = NULL)
-}
-
+source("functions/pool_results.R")
 
 tdcm_results <- bind_rows(
   pool_results(overall_tdcm) %>% mutate(model = "Overall"),
   pool_results(mard_tdcm) %>% mutate(model = "MARD"),
   pool_results(mod_tdcm) %>% mutate(model = "MOD"),
   pool_results(sidd_tdcm) %>% mutate(model = "SIDD"),
-  pool_results(sird_tdcm) %>% mutate(model = "SIRD")) 
-
-
-# covert to Hazard Ratio
-tdcm_output <- tdcm_results %>% 
-  mutate(HR = exp(Estimate),
-         lci = exp(Estimate - 1.96 * StdError),
-         uci = exp(Estimate + 1.96 * StdError)) %>% 
-  mutate(coef_ci = paste0(round(HR, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
-  pivot_wider(names_from = model, values_from = coef_ci) %>% 
-  dplyr::select(term, Overall, MARD, MOD, SIDD, SIRD) 
-
-
+  pool_results(sird_tdcm) %>% mutate(model = "SIRD")) %>% 
+  write_csv(.,"analysis/dspan03_tdcm pooled results with multiple imputation.csv")
 
 

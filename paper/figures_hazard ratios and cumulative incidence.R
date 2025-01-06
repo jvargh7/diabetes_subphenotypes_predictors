@@ -7,19 +7,22 @@ library(survminer)
 tdcm_coef <- read_csv("analysis/dspan03_tdcm pooled results with multiple imputation.csv") %>% 
   select(iv, estimate, lci, uci, model) %>% 
   mutate(HR = paste0(round(estimate, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
-  dplyr::filter(!iv %in% c("raceNH Black","raceNH White","raceOther","female1","min_age"),
+  dplyr::filter(!iv %in% c("studymesa","studyjhs","raceNH Black","raceNH White","raceOther","female1","min_age"),
                 model != "Overall") %>% 
   mutate(term = case_when(
+    iv == "bmi" ~ "BMI",
     iv == "sbp" ~ "SBP",
-    iv == "ldlc" ~ "LDL-C",
+    iv == "hba1c" ~ "HbA1c",
+    iv == "ldlc" ~ "LDL",
     iv == "homa2b" ~ "HOMA2-%B",
     iv == "homa2ir" ~ "HOMA2-IR",
-    iv == "hba1c" ~ "HbA1c",
-    iv == "bmi" ~ "BMI",
-    iv == "egfr_ckdepi_2021" ~ "EGFR",
+    iv == "egfr_ckdepi_2021" ~ "eGFR",
     TRUE ~ iv  
   ),
-  term = factor(term))
+  term = factor(term,
+                levels = c("eGFR", "HOMA2-IR", "HOMA2-%B", "LDL", "HbA1c", "SBP", "BMI"),
+                labels = c("eGFR", "HOMA2-IR", "HOMA2-%B", "LDL", "HbA1c", "SBP", "BMI"))
+  )
 
 
 # forest plot
@@ -31,9 +34,9 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
   scale_color_manual(values = cluster_colors) +
   scale_x_continuous(limits = c(0, 2.5)) +
   labs(
-    x = "HR (95% CI)",
+    x = "Hazard ratio (95% CI)",
     y = NULL,
-    title = "A: Hazard Ratios by Biomarkers",
+    title = "B: Hazard ratio for pathophysiological markers",
     color = "Subtype"
   ) +
   theme_minimal(base_size = 12) +
@@ -59,57 +62,52 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
 #-------------------------------------------------------------------------------------------------------------------
 # incidence plot
 
-ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/ipcw_dfs.RDS"))
-
-cox_fit <- list()
+ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
 for (i in 1:length(ipcw_dfs)) {
-  df <- ipcw_dfs[[i]]  
+  df <- ipcw_dfs[[i]]
   
-  # Cox PH - baseline data
-  cross_df <- df %>% 
-    group_by(study_id,study) %>% 
-    dplyr::filter(age == min(age)) %>% 
+  tdcm_df <- df %>%
+    arrange(study, study_id, age) %>%
+    group_by(study, study_id) %>%
+    mutate(
+      # tstart = case_when(row_number() == 1 ~ age, 
+      #                    TRUE ~ dplyr::lag(age, n = 1)), 
+      # tstop = age
+      baseline_age = first(age),  # Assuming 'age' at first observation is baseline
+      tstart = case_when(
+        row_number() == 1 ~ 0, 
+        TRUE ~ age - first(age)
+      ), 
+      tstop = lead(tstart, default = last(age) - first(age)) 
+    ) %>%
     ungroup() %>% 
-    mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
-    mutate(race = case_when(race == "NH Other" ~ "Other", 
-                            TRUE ~ race))
-  
-  df <- cross_df %>% 
+    dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
     mutate(cluster = factor(cluster,
                             levels = c("MOD", "SIDD", "MARD", "SIRD"),
-                            labels = c("MOD", "SIDD", "MARD", "SIRD")),
-           study_aric = case_when(study == "aric" ~ 1,
-                                  TRUE ~ 0),
-           study_cardia = case_when(study == "cardia" ~ 1,
-                                    TRUE ~ 0),
-           study_dppos = case_when(study == "dppos" ~ 1,
-                                   TRUE ~ 0),
-           study_jhs = case_when(study == "jhs" ~ 1,
-                                 TRUE ~ 0),
-           study_mesa = case_when(study == "mesa" ~ 1,
-                                  TRUE ~ 0),
-    ) %>% 
+                            labels = c("MOD", "SIDD", "MARD", "SIRD"))) %>% 
     dplyr::filter(time_to_event <= 10)
   
   
-  cox_fit[[i]] = coxph(Surv(time_to_event, event) ~ cluster + study_aric + study_cardia + study_dppos + study_jhs + study_mesa +
-                    + race + female + age + bmi + hba1c + homa2b + homa2ir 
-                  + ldlc + sbp + egfr_ckdepi_2021, 
-                  data = df, weights = ipcw_cluster)
-
+  tdcm_fit[[i]] <- coxph(Surv(tstart, tstop, event) ~ strata(cluster), 
+                         data = tdcm_df, weights = ipcw_cluster)
+  
+  
+  
 }
 
 
-plot_incidence = survfit2(cox_fit[[1]]) %>% 
+survfit2(tdcm_fit[[1]])
+
+plot_incidence = survfit2(tdcm_fit[[1]]) %>% 
   ggsurvfit(.,type = "risk") +
   xlab("Time to Diabetes (years)") +
   ylab("") +
-  ggtitle("B: Cumulative Incidence Curve for 10 Years (95% CI)") +
+  ggtitle("A: Crude cumulative incidence for T2D subtypes") +
   add_confidence_interval() +
   theme_minimal(base_size = 12) +
-  scale_color_manual(values = cluster_colors) +
-  scale_fill_manual(values = cluster_colors) +
+  scale_color_manual(values = cluster_colors, name = "Subtype") +
+  scale_fill_manual(values = cluster_colors, name = "Subtype") +
   theme(
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 12),
@@ -117,19 +115,15 @@ plot_incidence = survfit2(cox_fit[[1]]) %>%
     panel.grid.minor = element_blank(),
     axis.line = element_line(color = "black", size = 0.4) 
   ) +
-  scale_x_continuous(limits = c(0, 10), breaks = seq(0, 10, by = 2)) +
+  scale_x_continuous(limits = c(0, 5), breaks = seq(0, 5, by = 1)) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, by = 0.2))
 
 
 
-final_plot <- grid.arrange(plot_forest, plot_incidence, ncol = 2)
+
+final_plot <- grid.arrange(plot_incidence, plot_forest, ncol = 2)
 
 ggsave(final_plot,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/hazard ratios and incidence by subtype.png"),width=16,height=8)
-
-
-
-
-
 
 
 
