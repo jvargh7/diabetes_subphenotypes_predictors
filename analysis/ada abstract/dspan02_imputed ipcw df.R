@@ -6,28 +6,17 @@ library(emmeans)
 library(contrast)
 
 source("functions/egfr_ckdepi_2021.R")
-mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/mi_dfs.RDS"))
+mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
 
 
 ipcw_dfs <- list()
 
 for(i in 1:mi_dfs$m) {
   df <- complete(mi_dfs, action = i) %>% 
-    # no data with event=1 in these two
     dplyr::filter(!study %in% c("aric", "cardia"))
   
   fup15y <- df %>%
-    mutate(
-      egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
-      ratio_th = case_when(is.na(ratio_th) ~ tgl/hdlc,
-                                TRUE ~ ratio_th)) %>% 
-    mutate(race_eth = case_when(
-      race_eth %in% c("Hispanic","Hispanic Black","Hispanic White") ~ "Hispanic",
-      race_eth %in% c("Black","NH Black") ~ "NH Black",
-      race_eth %in% c("White","NH White") ~ "NH White",
-      race_eth %in% c("Other","Other/Mixed","NH Other") ~ "Other",
-      TRUE ~ NA_character_
-    )) %>% 
+    mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age)) %>% 
     group_by(study, study_id) %>%
     mutate(min_age = min(age)) %>%
     # Restrict to observations within 15 years of earliest age
@@ -45,7 +34,7 @@ for(i in 1:mi_dfs$m) {
     # without diagnosed T2D at baseline 
     dplyr::filter(event == 0 | ((age <= dmagediag) & (min_age < dmagediag))) %>% 
     ungroup() %>% 
-    rename(joint_id = new_id)
+    mutate(joint_id = paste(study, study_id, sep = "_"))
   
   # T2D: >= 1 wave before diagnosis; no T2D: >= 2 wave from baseline
   wave_df <- fup15y %>% 
@@ -87,7 +76,7 @@ for(i in 1:mi_dfs$m) {
     mutate(clu_available = case_when(joint_id %in% cluster_avaid$joint_id ~ 1,
                                      TRUE ~ 0))
   
-  ltfu_equation <- clu_available ~ study + female + race_eth + min_age
+  ltfu_equation <- clu_available ~ study + female + race + min_age
   ltfu_cluster_model <- glm(ltfu_equation, data = dm_df, family = "binomial")
   dm_df$prob_cluster_fup = predict(ltfu_cluster_model,newdata=dm_df,type="response")
   
@@ -106,7 +95,7 @@ for(i in 1:mi_dfs$m) {
   ipcw_dfs[[i]] <- ipcw_df
 }
 
-saveRDS(ipcw_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan02_ipcw dfs.RDS"))
+saveRDS(ipcw_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
 
 

@@ -2,31 +2,29 @@ rm(list = ls());gc();source(".Rprofile")
 
 source("functions/egfr_ckdepi_2021.R")
 
-analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>% 
+analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df.RDS")) %>% 
   mutate(race_eth = as.factor(race_eth),
          # To avoid the warning that 'Imputation method logreg is for categorical data' -- we can convert it back later
-         female = factor(female,levels=c(0,1))) 
-
-# df$egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = analytic_df$serumcreatinine,female = analytic_df$female,age = analytic_df$age)
+         female = factor(female,levels=c(0,1)),
+         med_dm_use = as.factor(med_dm_use),
+         med_bp_use = as.factor(med_bp_use),
+         med_chol_use = as.factor(med_chol_use)) %>% 
+  select(-c("apo_a","apo_b","alt","sex"))
 
 colnames(analytic_df)
 
-# Why do you have both insulinf, glucosef and insulinf2, glucosef2?!
-continuous_vars <- c("age", "sbp", "dbp", "height", "wc", "bmi", "hba1c", "insulinf",
-                     "glucosef", "glucose2h", "tgl", "hdlc", "ldlc", "serumcreatinine", 
-                     "ast", "alt","weight", "homa2b", "homa2ir",
-                     "apo_a", "apo_b", "uric_acid", "vldlc", "urinecreatinine","urinealbumin", "uacr",
-                     "hc", "triceps", "iliac", "abdominal", "medial", 
-                     "insulinf2", "glucosef2"
-                     )
+continuous_vars <- c("age", "height","weight","bmi","wc","sbp", "dbp","hba1c", 
+                     "totalc","ldlc","hdlc","vldlc","glucosef","insulinf","glucose2h",
+                     "tgl", "ratio_th","serumcreatinine","urinecreatinine","urinealbumin",
+                     "uacr","egfr", "homa2b", "homa2ir")
 
-proportion_vars <- c("female")
+proportion_vars <- c("female","med_dm_use","med_bp_use","med_chol_use")
 
-grouped_vars <- c("study","race_eth","race")
+grouped_vars <- c("race_eth")
 
 # Moved dmagediag to an ID variable
-id_vars <- c("study_id",  "visit", "year", "exam", "cluster_study_id", "cluster", "newdm", "dmagediag",
-             "diagDays", "anthro_StudyDays", "lab_StudyDays")
+id_vars <- c("study_id", "study", "wave", "cluster_study_id", "cluster", "new_id", 
+             "dmagediag", "dmduration", "dmfamilyhistory","available_labs", "available_anthro")
 
 library(survey)
 library(mice)
@@ -47,10 +45,7 @@ method[proportion_vars] <- "logreg"
 method[grouped_vars] <- "polyreg"
 method[id_vars] <- ""
 
-# Made glucosef and insulinf dependent on glucosef2 and insulinf2
-method["glucosef"] <- "~I(glucosef2/0.0555)"
-method["insulinf"] <- "~I(insulinf2/6)"
-method["weight"] ~ "I(bmi*(height/100)^2)"
+method["weight"] <- "~I(bmi*(height/100)^2)"
 
 pred = mi_null$predictorMatrix
 
@@ -66,7 +61,4 @@ mi_dfs <- mice(before_imputation,
 
 #df <- complete(mi_dfs, action = 1)
 
-mi_dfs$egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = mi_dfs$serumcreatinine,female = mi_dfs$female,age = df$age)
-
-
-saveRDS(mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
+saveRDS(mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/mi_dfs.RDS"))

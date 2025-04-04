@@ -12,7 +12,7 @@ process_hrs_wave <- function(wave_num, path_folder) {
     readRDS(female_file)
   ) %>%
     dplyr::select(hhid,pn,hhidpn,age,gender,race,ethnicity,raceeth,
-                  diagnosed_dm,agediagnosed_dm,medication_dm,
+                  diagnosed_dm,agediagnosed_dm,medication_dm,medication_bp,
                   # smoke,smokeever,smokecurr,alcohol,alcohol_days,
                   height,weight,sbp,dbp,waistcircumference) %>%
     mutate(wave = wave_num)
@@ -33,6 +33,8 @@ hrs_longitudinal <- bind_rows(
          hba1c = a1c_adj,
          totalc = tc_adj,
          hdlc = hdl_adj,
-         wc = waistcircumference)
+         wc = waistcircumference,
+         med_bp_use = medication_bp,
+         med_dm_use = medication_dm)
 
 saveRDS(hrs_longitudinal,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01i_hrs.RDS"))

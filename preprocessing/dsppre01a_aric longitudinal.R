@@ -4,6 +4,8 @@ anthro_vars <- c("sbp","dbp","height","weight","wc","bmi")
 # "vldlc","ast","alt" --> not there in aric
 lab_vars <- c("hba1c","insulinf","glucosef","glucose2h","tgl","hdlc","ldlc","totalc",
               "serumcreatinine","urinecreatinine","egfr","apo_a","apo_b","uric_acid")
+med_vars <-c('med_chol_use','med_bp_use','med_dm_use')
+
 
 aric_newdm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/aric_newdm.RDS")) 
 aric_baselinedm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/interim/aric_baseline_dm.RDS")) 
@@ -47,12 +49,16 @@ aric_longitudinal = aric_analysis %>%
   left_join(aric_newdm %>% 
               dplyr::select(study_id,dmagediag),
             by=c("study_id")) %>% 
-  mutate(
-         available_labs = rowSums(!is.na(.[,lab_vars])),
+  mutate(med_dm_use = case_when(
+    diab_med_2w=="Y"|diab_med_4w%in%c("T","1")|diab_med_any=="Y"|diab_med_afu==1 ~ 1,
+    TRUE ~ 0
+  )) %>% 
+  mutate(available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
   dplyr::select(study_id,visit,age,dmagediag,female,race,race_rev,
                 smk_evr,smk_cur,ratio_th,
-                available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars))
+                available_labs,available_anthro,
+                one_of(anthro_vars),one_of(lab_vars),one_of(med_vars))
 
 
 saveRDS(aric_longitudinal,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01a_aric.RDS"))

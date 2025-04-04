@@ -5,7 +5,7 @@ library(survminer)
 library(ggsurvfit)
 library(broom)
 
-ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan02_ipcw dfs.RDS"))
+ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
 
 # TDCM - longitudinal data, hazards time-varying, HR constant
 

@@ -174,10 +174,14 @@ dppos_longitudinal = lab %>%
   mutate(female = case_when(sex == 1 ~ 0,
                             sex == 2 ~ 1,
                             TRUE ~ NA_real_)) %>% 
+  mutate(med_dm_use = case_when(
+    treatment %in% c("Troglitazone","Metformin") ~ 1,
+    TRUE ~ 0
+  )) %>% 
   mutate(age = round(age,2),
          available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,race_eth,female,
+  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,race_eth,female,med_dm_use,
                 lab_StudyDays,anthro_StudyDays,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars)) %>% 
   group_by(study_id) %>%  
   arrange(study_id,lab_StudyDays,age) %>% 

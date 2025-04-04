@@ -28,11 +28,15 @@ jhs_longitudinal = jhs_analysis %>%
   left_join(jhs_newdm %>% 
               dplyr::select(study_id,dmagediag),
             by=c("study_id")) %>% 
+  mutate(med_dm_use = case_when(
+    (dmmeds==1 | dmmedsoral==1 | dmmedsins==1) ~ 1,
+    TRUE ~ 0
+  )) %>% 
   mutate(
     available_labs = rowSums(!is.na(.[,lab_vars])),
     available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
   dplyr::select(study_id,visit,age,dmagediag,female,race_eth,
-                alcohol,smoking,
+                alcohol,smoking,med_dm_use,
                 available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars))
 
 
