@@ -24,7 +24,7 @@ hrs_longitudinal <- bind_rows(
 ) %>% 
   left_join(biomarkers,
             by = c("hhid","pn","wave")) %>% 
-  mutate(bmi = weight/((height/100)^2),
+  mutate(bmi = weight/(height^2),
          female = case_when(gender == "Female" ~ 1,
                             TRUE ~ 0),
          study_id = as.numeric(hhidpn)) %>% 

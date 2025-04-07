@@ -28,6 +28,7 @@ if(Sys.info()["user"] == "zhongyuli"){
 if(Sys.info()["user"] == "JGUO258"){
   cluster_labels = c("MOD","SIRD","MARD","SIDD")
   cluster_colors = c("MOD"="#F8BDA4","SIRD"="#A1C3AC","SIDD"="#ACD9EA","MARD"="#D0ACC9")
+  cluster_colors_cosmos = c("MOD"="#F8BDA4","SIRD"="darkgreen","SIDD"="#4682b4","MARD"="#D0ACC9")
   
   path_nhanes_ckm_folder <- "C:/Users/JGUO258/OneDrive - Emory/Papers/NHANES CKM Cascade"
   path_g2a_longitudinal_folder <- "C:/Users/JGUO258/OneDrive - Emory/Papers/Crossnational Longitudinal Concordance"

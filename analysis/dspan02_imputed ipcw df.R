@@ -13,21 +13,15 @@ ipcw_dfs <- list()
 
 for(i in 1:mi_dfs$m) {
   df <- complete(mi_dfs, action = i) %>% 
-    # no data with event=1 in these two
-    dplyr::filter(!study %in% c("aric", "cardia"))
+    # no available clusters in these studies
+    dplyr::filter(!study %in% c("aric", "cardia","hrs")) 
+  
   
   fup15y <- df %>%
     mutate(
       egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
       ratio_th = case_when(is.na(ratio_th) ~ tgl/hdlc,
                                 TRUE ~ ratio_th)) %>% 
-    mutate(race_eth = case_when(
-      race_eth %in% c("Hispanic","Hispanic Black","Hispanic White") ~ "Hispanic",
-      race_eth %in% c("Black","NH Black") ~ "NH Black",
-      race_eth %in% c("White","NH White") ~ "NH White",
-      race_eth %in% c("Other","Other/Mixed","NH Other") ~ "Other",
-      TRUE ~ NA_character_
-    )) %>% 
     group_by(study, study_id) %>%
     mutate(min_age = min(age)) %>%
     # Restrict to observations within 15 years of earliest age
@@ -87,7 +81,9 @@ for(i in 1:mi_dfs$m) {
     mutate(clu_available = case_when(joint_id %in% cluster_avaid$joint_id ~ 1,
                                      TRUE ~ 0))
   
-  ltfu_equation <- clu_available ~ study + female + race_eth + min_age
+  # Ensure all categorical variables are factors and have correct levels if new levels might be present
+  dm_df$study <- factor(dm_df$study, levels = unique(dm_df$study))
+  ltfu_equation <- clu_available ~ study + female + race_clean + min_age
   ltfu_cluster_model <- glm(ltfu_equation, data = dm_df, family = "binomial")
   dm_df$prob_cluster_fup = predict(ltfu_cluster_model,newdata=dm_df,type="response")
   

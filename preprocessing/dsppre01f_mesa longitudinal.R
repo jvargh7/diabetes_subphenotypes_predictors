@@ -2,7 +2,7 @@ rm(list = ls());gc();source(".Rprofile")
 # ,"hc","triceps","iliac","abdominal","medial" --> not there in mesa
 anthro_vars <- c("sbp","dbp","height","weight","wc","bmi")
 # "glucose2h","vldlc","ast","alt","apo_a","apo_b","uric_acid" --> not there in mesa
-lab_vars <- c("hba1c","insulinf2","glucosef2","tgl","hdlc","ldlc","totalc",
+lab_vars <- c("hba1c","insulinf","glucosef","tgl","hdlc","ldlc","totalc",
               "serumcreatinine","urinealbumin","urinecreatinine","uacr","egfr")
 med_vars <- c("med_bp_use","med_chol_use","med_dm_use")
 
@@ -30,7 +30,9 @@ mesa_dat_all <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/worki
                   race == 4 ~ "Hispanic",
                   TRUE ~ NA_character_  
                 )) %>% 
-  dplyr::filter(!is.na(age))
+  dplyr::filter(!is.na(age)) %>% 
+  mutate(race_clean = race,
+         insulinf = insulinr)
 
 mesa_longitudinal = mesa_dat_all %>% 
   arrange(study_id,exam) %>% 
@@ -50,7 +52,7 @@ mesa_longitudinal = mesa_dat_all %>%
   mutate(
     available_labs = rowSums(!is.na(.[,lab_vars])),
     available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,exam,age,dmagediag,female,race,ethnicity,dmfamilyhistory,
+  dplyr::select(study_id,exam,age,dmagediag,female,race,race_clean,ethnicity,dmfamilyhistory,
                 ratio_th,smk_cig,smk_pipe,smk_tob,
                 available_labs,available_anthro,
                 one_of(anthro_vars),one_of(lab_vars),one_of(med_vars))

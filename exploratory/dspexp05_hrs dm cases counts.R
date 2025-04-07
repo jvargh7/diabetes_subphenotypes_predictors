@@ -3,6 +3,7 @@ rm(list=ls());gc();source(".Rprofile")
 #--------------------------------------------------------------------------------------------------------------
 ### HRS ###
 #--------------------------------------------------------------------------------------------------------------
+# N = 42,951
 hrs_long <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01i_hrs.RDS"))
 #-------------------------------------------------------------------------------------------
 # New-dm: Self-reported Duration <= 1 year OR HbA1c >= 6.5% OR FPG >=126 mg/dL.
@@ -11,28 +12,27 @@ hrs_long <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/worki
 # We need only New-DM and No-DM. We need to exclude Existing DM.
 
 # Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5))
-# N = 10243
+# N = 10,243
 hrs_dm_all <- hrs_long %>%
   group_by(study_id) %>% 
   dplyr::filter((!is.na(dmagediag) | 
                    is.na(dmagediag) & hba1c >= 6.5)) %>%
   ungroup()
 
-# Identify diagnosed DM, N = 7808
+# Identify diagnosed DM, N = 7,808
 hrs_dm_diag <- hrs_dm_all %>% 
   group_by(study_id) %>%
   dplyr::filter(diagnosed_dm == 1) %>%
   ungroup()
 
-# Among diagnosed DM, duration <= 1 year, N = 2279
+# Among diagnosed DM, duration <= 1 year, N = 2,293
 hrs_dm_newdiag <- hrs_dm_diag %>% 
+  dplyr::filter(!is.na(dmagediag) & !is.na(age)) %>%
   group_by(study_id) %>% 
-  dplyr::filter(!is.na(dmagediag) & !is.na(age) & 
-                  (age - dmagediag) >= 0 & 
-                  (age - dmagediag) <= 1) %>%
+  dplyr::filter(between(abs(age - dmagediag), 0, 1)) %>%
   ungroup()
 
-# Identify undiagnosed DM based on A1c. Set dmagediag = curent age, N = 1175
+# Identify undiagnosed DM based on A1c. Set dmagediag = curent age, N = 1,175
 hrs_dm_undiag <- hrs_long %>%
   group_by(study_id) %>% 
   dplyr::filter((is.na(dmagediag) & hba1c >= 6.5)) %>%
@@ -40,18 +40,16 @@ hrs_dm_undiag <- hrs_long %>%
   mutate(dmagediag = age)
 
 
-# Exclude all DM from all HRS to get no DM, N = 32708
+# Exclude all DM from all HRS to get no DM, N = 32,708
 hrs_ndm <- hrs_long %>% 
   dplyr::filter(!study_id %in% hrs_dm_all$study_id) 
 
-# %>%
-#   summarise(unique_study_id = n_distinct(study_id)) %>%
-#   pull(unique_study_id)
+# %>% distinct(study_id) %>% nrow()
 
 ### HRS Newly diagnosed dm: 3454 ###
 
 #-------------------------------------------------------------------------
-# Total sample (no T2D + new T2D), N = 35973, obs = 288954
+# Total sample (no T2D + new T2D), N = 35,987, obs = 289,084
 hrs_total <- bind_rows(hrs_dm_newdiag,
                        hrs_dm_undiag,
                        hrs_ndm) %>% 
@@ -63,7 +61,8 @@ hrs_total <- bind_rows(hrs_dm_newdiag,
                           TRUE ~ "Unknown"),
          ethnicity = case_when(ethnicity == "0.not hispanic" ~ "non-hispanic",
                                ethnicity == "1.hispanic" ~ "hispanic",
-                               TRUE ~ "unknown"))
+                               TRUE ~ "unknown")) %>% 
+  mutate(race_clean = race_eth)
 
 saveRDS(hrs_total, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp05_hrs new and no dm.RDS"))
 
@@ -92,35 +91,5 @@ hrs_fuptime <- hrs_total %>%
   group_by(study_id) %>% 
   mutate(fuptime = max(age, na.rm = TRUE) - min(age, na.rm = TRUE)) %>%
   ungroup()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

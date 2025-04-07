@@ -41,7 +41,7 @@ cardia_dat_all <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/wor
                   (med_diab == 2 | med_diab_nin == 2) ~ 1,
                   TRUE ~ 0
                 )
-  ) %>% 
+  ) 
   dplyr::filter(!is.na(age))
 
 cardia_longitudinal = cardia_dat_all %>% 

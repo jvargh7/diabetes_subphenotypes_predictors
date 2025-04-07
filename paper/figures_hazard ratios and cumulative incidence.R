@@ -6,8 +6,11 @@ library(survminer)
 
 tdcm_coef <- read_csv("analysis/dspan03_tdcm pooled results with multiple imputation.csv") %>% 
   select(iv, estimate, lci, uci, model) %>% 
-  mutate(HR = paste0(round(estimate, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
-  dplyr::filter(!iv %in% c("studymesa","studyjhs","raceNH Black","raceNH White","raceOther","female1","min_age"),
+  # mutate(HR = paste0(round(estimate, 2), " (", round(lci, 2), ", ", round(uci, 2), ")")) %>% 
+  mutate(HR = paste0(format(round(estimate, 2), nsmall = 2), " (",
+                        format(round(lci, 2), nsmall = 2), ", ",
+                        format(round(uci, 2), nsmall = 2), ")")) %>% 
+  dplyr::filter(!iv %in% c("studymesa","studyjhs","race_cleanNH Black","race_cleanNH White","race_cleanOther","female1","min_age"),
                 model != "Overall") %>% 
   mutate(term = case_when(
     iv == "bmi" ~ "BMI",
@@ -32,11 +35,11 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
   geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
   geom_hline(yintercept = 0, linetype = "solid", color = "black") +
   scale_color_manual(values = cluster_colors) +
-  scale_x_continuous(limits = c(0, 2.5)) +
+  scale_x_continuous(limits = c(0, 3.3)) +
   labs(
     x = "Hazard ratio (95% CI)",
     y = NULL,
-    title = "B: Hazard ratio for pathophysiological markers",
+    title = "B: Hazard ratio of pathophysiological markers",
     color = "Subtype"
   ) +
   theme_minimal(base_size = 12) +
@@ -49,7 +52,7 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
     axis.line = element_line(color = "black", size = 0.4)
   ) +
   geom_text(
-    aes(x = uci + 0.05, label = HR),
+    aes(x = uci + 0.01, label = HR),
     position = position_dodge(width = 0.7),
     vjust = 0.2,
     hjust = -0.05,
@@ -62,7 +65,9 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
 #-------------------------------------------------------------------------------------------------------------------
 # incidence plot
 
-ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan02_ipcw dfs.RDS"))
+ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan02_ipcw dfs.RDS"))
+
+tdcm_fit <- list()
 
 for (i in 1:length(ipcw_dfs)) {
   df <- ipcw_dfs[[i]]

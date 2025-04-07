@@ -35,6 +35,13 @@ aric_analysis <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/work
                   TRUE ~ NA_character_  
                 )
   ) %>% 
+  mutate(
+    race_clean = case_when(
+      race == "Black" & race_rev == "AA" ~ "NH Black",
+      race == "White" & race_rev == "White" ~ "NH White",
+      TRUE ~ "Other"  # For any unexpected or missing combinations
+    )
+  ) %>% 
   group_by(study_id) %>% 
   mutate(across(one_of("female","race"),~zoo::na.locf(.))) %>% 
   ungroup()
@@ -55,7 +62,7 @@ aric_longitudinal = aric_analysis %>%
   )) %>% 
   mutate(available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,visit,age,dmagediag,female,race,race_rev,
+  dplyr::select(study_id,visit,age,dmagediag,female,race_clean,race,
                 smk_evr,smk_cur,ratio_th,
                 available_labs,available_anthro,
                 one_of(anthro_vars),one_of(lab_vars),one_of(med_vars))

@@ -7,6 +7,8 @@ library(broom)
 
 ipcw_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan02_ipcw dfs.RDS"))
 
+imputed_bmi <- read.csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df with imputed bmi.csv"))
+
 # TDCM - longitudinal data, hazards time-varying, HR constant
 
 overall_tdcm <- list()
@@ -30,6 +32,11 @@ for (i in 1:length(ipcw_dfs)) {
                             TRUE ~ 0))
   
   tdcm_df <- cluster_df %>%
+    # recalculate bmi --------- delete later
+    select(-bmi) %>% 
+    left_join(imputed_bmi %>% 
+                mutate(wave = as.character(wave)),
+              by = c("study","study_id","wave","age")) %>% 
     arrange(study, study_id, age) %>%
     group_by(study, study_id) %>%
     mutate(
@@ -41,26 +48,27 @@ for (i in 1:length(ipcw_dfs)) {
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
-    mutate(race = case_when(race == "NH Other" ~ "Other", 
-                            TRUE ~ race))
+    mutate(race_clean = case_when(race_clean == "NH Other" ~ "Other", 
+                            TRUE ~ race_clean)) 
+  
 
-  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ study + female + race + min_age + bmi + hba1c + homa2b 
+  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ study + female + race_clean + min_age + bmi + hba1c + homa2b 
                              + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                              data = tdcm_df, weights = ipcw_cluster)
   
-  mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ study + female + race + min_age + bmi + hba1c + homa2b 
+  mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ study + female + race_clean + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
   
-  mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ study + female + race + min_age + bmi + hba1c + homa2b 
+  mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ study + female + race_clean + min_age + bmi + hba1c + homa2b 
                          + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                          data = tdcm_df, weights = ipcw_cluster)
   
-  sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ study + female + race + min_age + bmi + hba1c + homa2b 
+  sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ study + female + race_clean + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
   
-  sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ study + female + race + min_age + bmi + hba1c + homa2b 
+  sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ study + female + race_clean + min_age + bmi + hba1c + homa2b 
                           + homa2ir + ldlc + sbp + egfr_ckdepi_2021, 
                           data = tdcm_df, weights = ipcw_cluster)
 }

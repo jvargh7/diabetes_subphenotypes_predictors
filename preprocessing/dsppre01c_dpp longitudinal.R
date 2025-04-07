@@ -5,6 +5,7 @@ anthro_vars <- c("sbp","dbp","height","weight","wc","hc","triceps","iliac","abdo
 # "totalc" -- not there in dpp
 lab_vars <- c("hba1c","insulinf","glucosef","glucose2h","vldlc","tgl","hdlc","ldlc","totalc",
               "serumcreatinine","ast","alt")
+med_vars <- c("med_dm_use")
 
 # Each 'release' contributed a row
 dpp_demographics <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/interim/dpppre01_demographic.RDS")) %>% 
@@ -181,8 +182,10 @@ dppos_longitudinal = lab %>%
   mutate(age = round(age,2),
          available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,race_eth,female,med_dm_use,
-                lab_StudyDays,anthro_StudyDays,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars)) %>% 
+  mutate(race_clean = race_eth) %>% 
+  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,race_eth,race_clean,female,
+                lab_StudyDays,anthro_StudyDays,available_labs,available_anthro,
+                one_of(anthro_vars),one_of(lab_vars),one_of(med_vars)) %>% 
   group_by(study_id) %>%  
   arrange(study_id,lab_StudyDays,age) %>% 
   mutate(wave = row_number()) %>% 

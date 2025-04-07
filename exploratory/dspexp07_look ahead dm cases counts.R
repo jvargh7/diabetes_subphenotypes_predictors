@@ -24,6 +24,6 @@ la_racemin <- la_newdm %>%
 la_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01h_la.RDS"))
 
 la_newdm_long <-la_longitudinal[la_longitudinal$dmduration%in% c(0, 1), ] 
-la_newdm_long$study = "look ahead" #N=601 
+la_newdm_long$study = "look ahead" #N=877 
 
 saveRDS(la_newdm_long, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp07_look ahead new dm.RDS"))

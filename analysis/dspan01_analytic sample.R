@@ -1,7 +1,7 @@
 rm(list=ls());gc();source(".Rprofile")
 
 # cleaned longitudinal data
-pooled_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp13_final longitudinal data.RDS"))
+pooled_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dspexp13_final longitudinal data.RDS")) 
 
 #--------------------------------------------------------------------------------------------------------------------
 # add homa2 in the dataset by study_id, study, age
@@ -31,10 +31,21 @@ analytic_df <- pooled_df %>%
               distinct(study_id,study,age,.keep_all=TRUE),
             by = c("study_id","study","age")) %>% 
   left_join(clusters %>% 
-              dplyr::select(cluster_study_id,original_study_id,cluster,study,female),
+              dplyr::select(cluster_study_id,original_study_id,cluster,study,female) %>% 
+              mutate(study = case_when(study == "dpp" ~ "dppos",
+                                       TRUE ~ study)),
             by=c("study"="study","study_id" = "original_study_id","female"))
 
 saveRDS(analytic_df,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df.RDS"))
 
 write.csv(analytic_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df.csv"))
 
+
+
+### delete soon ---
+
+impute_bmi_df <- analytic_df %>% 
+  dplyr::filter(study %in% c("jhs","mesa","dppos"))
+
+write.csv(impute_bmi_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df for bmi imputation.csv"))
+# bmi NA: 229
