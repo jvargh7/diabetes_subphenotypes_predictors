@@ -25,6 +25,7 @@ final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/
   mutate(joint_id = paste(study, original_study_id, sep = "_"))
 
 analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df.RDS")) %>% 
+  # dplyr::filter(study != "HRS") %>% 
   mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
          joint_id = paste(study, study_id, sep = "_"),
          # newly diagnosed T2D or no T2D
@@ -37,17 +38,14 @@ analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
                              TRUE ~ max(age)),
          t = age - max_age) %>% 
   dplyr::filter(t <= 0 & t >= -15) %>% 
-  ungroup() %>% 
-  # correct bmi ----- delete later
-  mutate(bmi = case_when(study == "hrs" ~ weight/(height^2),
-                         TRUE ~ bmi))
+  ungroup() 
 
 wave_df <- analytic_df %>% 
   group_by(study,study_id,joint_id) %>%
   mutate(has_age_before_max = any(age < max_age)) %>% 
   dplyr::filter((newdm_event == 1 & has_age_before_max & !is.na(cluster)) 
                 | (newdm_event == 0 & has_age_before_max)) %>% 
-  mutate(subtype = case_when(is.na(dmagediag) ~ "NOT2D",
+  mutate(subtype = case_when(is.na(dmagediag) & hba1c < 6.5 & glucosef < 126 ~ "NOT2D", # redefine ---------------------------------
                              !is.na(cluster) ~ cluster,
                              TRUE ~ NA_character_)) %>% 
   ungroup() %>% 
