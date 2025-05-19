@@ -24,8 +24,7 @@ source("functions/egfr_ckdepi_2021.R")
 final_dataset_temp = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/final_dataset_temp.RDS")) %>%
   mutate(joint_id = paste(study, original_study_id, sep = "_"))
 
-analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dsppre01_analytic df.RDS")) %>% 
-  # dplyr::filter(study != "HRS") %>% 
+analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsppre01_analytic df.RDS")) %>% 
   mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
          joint_id = paste(study, study_id, sep = "_"),
          # newly diagnosed T2D or no T2D
@@ -38,22 +37,22 @@ analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
                              TRUE ~ max(age)),
          t = age - max_age) %>% 
   dplyr::filter(t <= 0 & t >= -15) %>% 
-  ungroup() 
+  ungroup()
 
 wave_df <- analytic_df %>% 
   group_by(study,study_id,joint_id) %>%
   mutate(has_age_before_max = any(age < max_age)) %>% 
   dplyr::filter((newdm_event == 1 & has_age_before_max & !is.na(cluster)) 
                 | (newdm_event == 0 & has_age_before_max)) %>% 
-  mutate(subtype = case_when(is.na(dmagediag) & hba1c < 6.5 & glucosef < 126 ~ "NOT2D", # redefine ---------------------------------
+  mutate(subtype = case_when(is.na(dmagediag) ~ "NOT2D",
                              !is.na(cluster) ~ cluster,
                              TRUE ~ NA_character_)) %>% 
   ungroup() %>% 
   arrange(joint_id,t) %>% 
   distinct(joint_id,t,.keep_all=TRUE) %>% 
-  mutate(across(one_of(c("subtype","race_clean","study")),.fns=~as.factor(.)))
+  mutate(across(one_of(c("subtype","race","study")),.fns=~as.factor(.)))
   
-summary(wave_df[,c("homa2b","t","subtype","max_age","female","study","race_clean")])
+summary(wave_df[,c("homa2b","t","subtype","max_age","female","study","race")])
 table(wave_df$subtype,useNA="always")
 
 wave_df %>% 
@@ -79,16 +78,16 @@ library(ggeffects)
 emm_options(pbkrtest.limit = 999999)
 
 # library(geepack)
-# m1a = geeglm(homa2b ~ subtype*ns(t) + max_age + female + study + race_clean, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
-# m2 = geeglm(bmi ~ subtype*ns(t) + max_age + female + study + race_clean, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
-# m3 = geeglm(hba1c ~ subtype*ns(t) + max_age + female + study + race_clean, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+# m1a = geeglm(homa2b ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+# m2 = geeglm(bmi ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
+# m3 = geeglm(hba1c ~ subtype*ns(t) + max_age + female + study + race, family = gaussian(),data = wave_df,id = joint_id,corstr = "independence")
  
 
 library(lme4)
-m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + max_age + female + study + race_clean + (1|joint_id), data = wave_df)
-m2 = lmer(bmi ~ subtype*ns(t,df = 3) + max_age + female + study + race_clean  + (1|joint_id), data = wave_df)
-m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + max_age + female + study + race_clean  + (1|joint_id), data = wave_df)
-m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + max_age + female + study + race_clean  + (1|joint_id), data = wave_df)
+m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + max_age + female + study + race + (1|joint_id), data = wave_df)
+m2 = lmer(bmi ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
+m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
+m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + max_age + female + study + race  + (1|joint_id), data = wave_df)
 
 
 
@@ -106,10 +105,10 @@ bind_rows(out1 %>% as.data.frame() %>%  mutate(outcome = "HOMA2B"),
           out3 %>% as.data.frame() %>% mutate(outcome = "HbA1c"),
           out4 %>% as.data.frame() %>% mutate(outcome = "HOMA2IR")
           ) %>% 
-  write_csv(.,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan04_modeled trajectories of biomarkers.csv"))
+  write_csv(.,paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv"))
 
 
-out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan04_modeled trajectories of biomarkers.csv"))
+out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv"))
 
 # cluster_not2d_colors = c(cluster_colors,"#AC94F4")
 cluster_not2d_colors = c(cluster_colors_cosmos,"#5C4033")
@@ -183,7 +182,7 @@ ggarrange(fig_bmi,
 
 
 
-out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/8 cohorts/dspan04_modeled trajectories of biomarkers.csv")) %>% 
+out_combined <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_modeled trajectories of biomarkers.csv")) %>% 
   dplyr::filter(x %in% c(-5,0)) %>% 
   dplyr::select(group,outcome,x,predicted,std.error) %>% 
   mutate(t = case_when(x == -5 ~ "t5",
@@ -209,6 +208,51 @@ out_combined_not2d = out_combined %>%
          se_diff_not2d_diff = sqrt(se_diff^2 + not2d_se_diff^2)) %>% 
   mutate(diff_not2d_diff_lci = diff_not2d_diff - 1.96*se_diff_not2d_diff,
          diff_not2d_diff_uci = diff_not2d_diff + 1.96*se_diff_not2d_diff)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

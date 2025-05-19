@@ -1,10 +1,11 @@
 
 rm(list=ls());gc();source(".Rprofile")
 
-anthro_vars <- c("sbp","dbp","height","wc","hc","triceps","iliac","abdominal","medial","bmi")
+anthro_vars <- c("sbp","dbp","height","weight","wc","hc","triceps","iliac","abdominal","medial","bmi")
 # "totalc" -- not there in dpp
-lab_vars <- c("hba1c","insulinf","glucosef","glucose2h","vldlc","tgl","hdlc","ldlc",
+lab_vars <- c("hba1c","insulinf","glucosef","glucose2h","vldlc","tgl","hdlc","ldlc","totalc",
               "serumcreatinine","ast","alt")
+med_vars <- c("med_dm_use")
 
 # Each 'release' contributed a row
 dpp_demographics <- readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/interim/dpppre01_demographic.RDS")) %>% 
@@ -171,11 +172,24 @@ dppos_longitudinal = lab %>%
                          agegroup == 6 ~ 62 + lab_StudyDays/365,
                          agegroup == 7 ~ 67 + lab_StudyDays/365)) %>% 
   dplyr::filter(!is.na(bmi)) %>% 
+  mutate(female = case_when(sex == 1 ~ 0,
+                            sex == 2 ~ 1,
+                            TRUE ~ NA_real_)) %>% 
+  mutate(med_dm_use = case_when(
+    treatment %in% c("Troglitazone","Metformin") ~ 1,
+    TRUE ~ 0
+  )) %>% 
   mutate(age = round(age,2),
          available_labs = rowSums(!is.na(.[,lab_vars])),
          available_anthro = rowSums(!is.na(.[,anthro_vars]))) %>% 
-  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,lab_StudyDays,anthro_StudyDays,available_labs,available_anthro,one_of(anthro_vars),one_of(lab_vars),sex,race_eth) %>% 
-  arrange(study_id,lab_StudyDays,age)
+  mutate(race_clean = race_eth) %>% 
+  dplyr::select(study_id,dpp,newdm,age,dmagediag,diagDays,race_eth,race_clean,female,
+                lab_StudyDays,anthro_StudyDays,available_labs,available_anthro,
+                one_of(anthro_vars),one_of(lab_vars),one_of(med_vars)) %>% 
+  group_by(study_id) %>%  
+  arrange(study_id,lab_StudyDays,age) %>% 
+  mutate(wave = row_number()) %>% 
+  ungroup()  
 
 
 

@@ -56,16 +56,15 @@ longitudinal_df = bind_rows(aric_longitudinal %>% mutate(study_id = as.numeric(s
                                      )
                                    ))) %>% 
   
-  # mutate(glucosef2 = case_when(is.na(glucosef2) ~ glucosef*0.0555,
-  #                              TRUE ~ glucosef2),
-  #        # 1 μIU/mL = 6.00 pmol/L
-  #        insulinf2 = case_when(is.na(insulinf2) ~ insulinf*6,
-  #                              TRUE ~ insulinf2)) %>% 
-  mutate(
-         # glucosef = case_when(is.na(glucosef) ~ glucosef2/0.0555,
-         #                      TRUE ~ glucosef),
-         # insulinf = case_when(is.na(insulinf) ~ insulinf2/6,
-         #                      TRUE ~ insulinf),
+  mutate(glucosef2 = case_when(is.na(glucosef2) ~ glucosef*0.0555,
+                               TRUE ~ glucosef2),
+         # 1 μIU/mL = 6.00 pmol/L
+         insulinf2 = case_when(is.na(insulinf2) ~ insulinf*6,
+                               TRUE ~ insulinf2)) %>% 
+  mutate(glucosef = case_when(is.na(glucosef) ~ glucosef2/0.0555,
+                              TRUE ~ glucosef),
+         insulinf = case_when(is.na(insulinf) ~ insulinf2/6,
+                              TRUE ~ insulinf),
          weight = case_when(!is.na(height) ~ bmi*(height/100)^2,
                             TRUE ~ NA_real_)
          ) %>% 
@@ -98,6 +97,7 @@ analytic_df <- longitudinal_df %>%
 
 
 # Not vectorized yet -- 
+# source("C:/code/external/functions/cgm/egfr_ckdepi_2021.R")
 source("functions/egfr_ckdepi_2021.R")
 analytic_df$egfr_2021 = egfr_ckdepi_2021(analytic_df$serumcreatinine,analytic_df$female,analytic_df$age)
 
@@ -240,7 +240,7 @@ ggarrange(f1_bmi,
           legend = "bottom",
           nrow = 2,
           ncol = 4) %>% 
-  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/trajectory of 8 biomarkers before diagnosis.jpg"),width=12,height = 8)
+  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/trajectory of biomarkers before diagnosis.jpg"),width=12,height = 8)
 
 formatting_proposal = theme(axis.title = element_text(size = 16),
                               axis.text = element_text(size = 16),

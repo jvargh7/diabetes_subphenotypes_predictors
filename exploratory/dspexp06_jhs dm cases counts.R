@@ -4,6 +4,7 @@ rm(list=ls());gc();source(".Rprofile")
 ### JHS ###
 #--------------------------------------------------------------------------------------------------------------
 # includes new diagnosed dm + undiagnosed
+# N = 1,817
 jhs_longitudinal <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/cleaned/dsppre01e_jhs.RDS"))
 
 # Identify all DM (either dmagediag is not NA OR (dmagediag is NA, HbA1c >= 6.5))
@@ -15,12 +16,10 @@ jhs_dm_all <- jhs_longitudinal %>%
   ungroup()
 
 # Among diagnosed DM, duration <= 1 year, N = 268
-jhs_dm_newdiag <- jhs_dm_all %>% 
-  group_by(study_id) %>% 
-  dplyr::filter(!is.na(dmagediag) & !is.na(age) & 
-                  (age - dmagediag) >= 0 & 
-                  (age - dmagediag) <= 1) %>%
-  ungroup()
+jhs_newdm = readRDS(paste0(path_diabetes_subphenotypes_adults_folder,"/working/cleaned/jhs_newdm.RDS")) 
+
+jhs_newdm_long <- jhs_longitudinal %>% 
+  dplyr::filter(study_id %in% jhs_newdm$study_id) 
 
 # Identify undiagnosed DM based on A1c. Set agediagnosed_dm = current age, N = 14
 jhs_dm_undiag <- jhs_longitudinal %>%
@@ -30,18 +29,17 @@ jhs_dm_undiag <- jhs_longitudinal %>%
   mutate(dmagediag = age)
 
 
-# Exclude all DM to get no DM, N = 1535
+# Exclude all DM to get no DM, N = 1,535
 jhs_ndm <- jhs_longitudinal %>% 
   dplyr::filter(!study_id %in% jhs_dm_all$study_id) 
 
-# %>% distinct(study_id) %>%
-# nrow()
+# %>% distinct(study_id) %>% nrow()
 
 ### JHS Newly diagnosed dm: 282 ###
 
 #-------------------------------------------------------------------------
-# Total sample (no T2D + new T2D), N = 1817, obs = 4139
-jhs_total <- bind_rows(jhs_dm_newdiag,
+# Total sample (no T2D + new T2D), N = 1,817, obs = 4,621
+jhs_total <- bind_rows(jhs_newdm_long,
                         jhs_dm_undiag,
                         jhs_ndm)
 
