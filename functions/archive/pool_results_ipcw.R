@@ -9,7 +9,7 @@ pool_results <- function(model) {
   
   # Prepare output dataframe with calculations
   output <- data.frame(Estimate = results$estimate,
-                       SE = results$std.error,
+                       SE = results$robust.se,
                        term = results$term
                        # dfcom = dfcom_coxph  # Uncomment and define dfcom_coxph if needed
   ) %>% 
