@@ -3,10 +3,6 @@ rm(list = ls());gc();source(".Rprofile")
 # restrict to 15y of follow-up time for trajectory analysis
 analytic_df = readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
   dplyr::filter(t <= 0 & t >= -15) %>% 
-  mutate(subtype = case_when(is.na(dmagediag) ~ "NOT2D",
-                             !is.na(cluster) ~ cluster,
-                             TRUE ~ NA_character_)) %>% 
-  dplyr::filter(!is.na(subtype)) %>% 
   arrange(joint_id,t) %>% 
   distinct(joint_id,t,.keep_all=TRUE) %>% 
   mutate(across(one_of(c("subtype","race","study")),.fns=~as.factor(.)))

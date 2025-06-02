@@ -6,7 +6,7 @@ library(ggsurvfit)
 library(survminer)
 library(survival)
 
-tdcm_coef <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan04_pooled tdcm results.csv")) %>% 
+tdcm_coef <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_pooled tdcm results.csv")) %>% 
   select(iv, estimate, lci, uci, model) %>% 
   dplyr::filter(model != "Overall") %>% 
   mutate(HR = paste0(format(round(estimate, 2), nsmall = 2), " (",
@@ -18,14 +18,14 @@ tdcm_coef <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/wor
     iv == "sbp_scaled" ~ "SBP",
     iv == "hba1c" ~ "HbA1c",
     iv == "ldlc_scaled" ~ "LDL",
-    iv == "homa2b" ~ "HOMA2-%B",
+    iv == "homa2b_scaled" ~ "HOMA2-%B",
     iv == "homa2ir" ~ "HOMA2-IR",
     iv == "egfr_ckdepi_2021_scaled" ~ "eGFR",
     TRUE ~ iv  
   ),
   term = factor(term,
                 levels = c("eGFR", "HOMA2-IR", "HOMA2-%B", "LDL", "HbA1c", "SBP", "BMI"),
-                labels = c("eGFR (per 10 mL/min/1.73 m²)", "HOMA2-IR", "HOMA2-%B", "LDL (per 10 mg/dL)", "HbA1c (%)", "SBP (per 10 mmHg)", "BMI (kg/m²)"))
+                labels = c("eGFR (per 10 mL/min/1.73 m²)", "HOMA2-IR (%)", "HOMA2-%B (per 10%)", "LDL (per 10 mg/dL)", "HbA1c (%)", "SBP (per 10 mmHg)", "BMI (kg/m²)"))
   ) %>% 
   mutate(model = factor(model,
                         levels = c("MOD", "SIDD", "MARD", "SIRD"),
@@ -59,7 +59,7 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
     aes(x = uci + 0.01, label = HR),
     position = position_dodge(width = 0.7),
     vjust = 0.2,
-    hjust = 0.1,
+    hjust = -0.05,
     fontface = "bold",
     size = 5
   ) 

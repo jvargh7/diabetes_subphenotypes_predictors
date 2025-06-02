@@ -6,7 +6,7 @@ mean_vars = c("age","dmagediag","bmi","sbp","dbp","ldlc","hdlc",
 
 median_vars = c("hba1c","homa2b","homa2ir")
 
-table_df <- read_csv("analysis/dspan05_trajectory descriptive characteristics by subtype.csv") %>% 
+table_df <- read_csv("analysis/dspan04_trajectory descriptive characteristics by subtype.csv") %>% 
   dplyr::mutate(selected_rows = case_when(variable %in% mean_vars & est %in% c("mean","sd") ~ 1,
                                           variable %in% median_vars & est %in% c("median","q25","q75") ~ 1,
                                           !variable %in% c(mean_vars,median_vars) ~ 1,
@@ -21,9 +21,8 @@ table_df <- read_csv("analysis/dspan05_trajectory descriptive characteristics by
   )) %>% 
   dplyr::select(variable,group,subtype,output) %>% 
   pivot_wider(names_from=subtype,values_from=output) %>% 
-  dplyr::select(variable,group,Total,MARD,MOD,NOT2D,SIDD,SIRD)
-
-write_csv(table_df,"paper/table_trajectory descriptive characteristics by subtype.csv")  
+  dplyr::select(variable,group,Total,NOT2D,MARD,MOD,SIDD,SIRD) %>% 
+  write_csv(.,"paper/table_trajectory descriptive characteristics by subtype.csv")  
 
 
 # predictors  analysis ---------------------------
@@ -32,7 +31,7 @@ mean_vars = c("age","dmagediag","bmi","sbp","dbp","ldlc","hdlc",
 
 median_vars = c("hba1c","homa2b","homa2ir")
 
-table_df <- read_csv("analysis/dspan05_predictors descriptive characteristics by subtype.csv") %>% 
+table_df <- read_csv("analysis/dspan04_predictors descriptive characteristics by subtype.csv") %>% 
   dplyr::mutate(selected_rows = case_when(variable %in% mean_vars & est %in% c("mean","sd") ~ 1,
                                           variable %in% median_vars & est %in% c("median","q25","q75") ~ 1,
                                           !variable %in% c(mean_vars,median_vars) ~ 1,
@@ -47,8 +46,7 @@ table_df <- read_csv("analysis/dspan05_predictors descriptive characteristics by
   )) %>% 
   dplyr::select(variable,group,subtype,output) %>% 
   pivot_wider(names_from=subtype,values_from=output) %>% 
-  dplyr::select(variable,group,Total,MARD,MOD,NOT2D,SIDD,SIRD)
-
-write_csv(table_df,"paper/table_predictors descriptive characteristics by subtype.csv") 
+  dplyr::select(variable,group,Total,NOT2D,MARD,MOD,SIDD,SIRD) %>% 
+  write_csv(.,"paper/table_predictors descriptive characteristics by subtype.csv") 
 
 
