@@ -2,6 +2,29 @@ rm(list = ls());gc();source(".Rprofile")
 
 source("functions/table1_summary.R")
 
+# trajectory analysis ---------------------------
+
+analytic_df = readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
+  dplyr::filter(t <= 0 & t >= -15) %>% 
+  arrange(joint_id,t) %>% 
+  distinct(joint_id,t,.keep_all=TRUE) %>% 
+  mutate(tg_hdl = tgl/hdlc)
+
+
+c_vars = c("age","dmagediag","bmi","hba1c","homa2b","homa2ir","sbp","dbp","ldlc","hdlc",
+           "insulinf","glucosef","egfr","tgl","tg_hdl")
+p_vars = c("female")
+g_vars = c("study","race")
+
+
+table_df = analytic_df %>% 
+  bind_rows(.,
+            {.} %>% 
+              mutate(subtype="Total")) %>% 
+  table1_summary(.,c_vars = c_vars,p_vars = p_vars,g_vars = g_vars,id_vars = "subtype") %>% 
+  write_csv(.,"analysis/dspan04_trajectory descriptive characteristics by subtype.csv")
+
+
 # predictors analysis ---------------------------
 
 analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>%
@@ -13,11 +36,8 @@ analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
     tstop = age
   ) %>% 
   ungroup() %>% 
-  # dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
-  dplyr::filter(tstop <= censored_age) %>% 
-  mutate(tg_hdl = tgl/hdlc) %>% 
-  # only baseline
-  dplyr::filter(age == earliest_age)
+  dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
+  mutate(tg_hdl = tgl/hdlc)
 
 
 c_vars = c("age","dmagediag","bmi","hba1c","homa2b","homa2ir","sbp","dbp","ldlc","hdlc",

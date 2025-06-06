@@ -9,6 +9,10 @@ library(broom)
 source("functions/egfr_ckdepi_2021.R")
 mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
 
+clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
+  dplyr::filter(dpp_intervention == 1) %>% 
+  distinct(study,study_id,dpp_intervention) # n = 60
+
 # TDCM - longitudinal data, hazards time-varying, HR constant
 analytic_dfs <- list()
 overall_tdcm <- list()
@@ -21,7 +25,13 @@ sird_tdcm <- list()
 for(i in 1:mi_dfs$m) {
   df <- complete(mi_dfs, action = i) %>% 
     mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
-           time_to_event = censored_age - age) 
+           time_to_event = censored_age - age) %>% 
+    left_join(clean_df,
+              by = c("study","study_id")) %>% 
+    mutate(dpp_intervention = case_when(
+      dpp_intervention == 1 ~ 1,
+      TRUE ~ 0
+    ))
   
   
   analytic_df <- df %>% 
@@ -41,25 +51,25 @@ for(i in 1:mi_dfs$m) {
 for (i in 1:length(analytic_dfs)) {
   df <- analytic_dfs[[i]]   
   
-  cluster_df <- analytic_df %>% 
-    mutate(mard = case_when(event == 1 & (cluster == "MARD") ~ 1,
-                            TRUE ~ 0),
-           mod = case_when(event == 1 & (cluster == "MOD") ~ 1,
-                           TRUE ~ 0),
-           sidd = case_when(event == 1 & (cluster == "SIDD") ~ 1,
-                            TRUE ~ 0),
-           sird = case_when(event == 1 & (cluster == "SIRD") ~ 1,
-                            TRUE ~ 0))
   
-  tdcm_df <- cluster_df %>%
+  tdcm_df <- df %>%
     arrange(study, study_id, joint_id, age) %>%
     group_by(study, study_id, joint_id) %>% 
     mutate(
-      tstart = case_when(row_number() == 1 ~ age, 
-                         TRUE ~ dplyr::lag(age, n = 1)), 
-      tstop = age
+      tstart = age, 
+      tstop = dplyr::lead(age),
+      event_true = dplyr::lead(event)
     ) %>% 
     ungroup() %>% 
+    dplyr::filter(age < censored_age) %>% 
+    mutate(mard = case_when(event_true == 1 & (cluster == "MARD") ~ 1,
+                            TRUE ~ 0),
+           mod = case_when(event_true == 1 & (cluster == "MOD") ~ 1,
+                           TRUE ~ 0),
+           sidd = case_when(event_true == 1 & (cluster == "SIDD") ~ 1,
+                            TRUE ~ 0),
+           sird = case_when(event_true == 1 & (cluster == "SIRD") ~ 1,
+                            TRUE ~ 0)) %>% 
     dplyr::filter((tstart < tstop) & (tstop <= censored_age)) %>% 
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
@@ -72,32 +82,62 @@ for (i in 1:length(analytic_dfs)) {
            egfr_ckdepi_2021_scaled = egfr_ckdepi_2021/10)
   
 
-  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                             + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                             data = tdcm_df)
+  overall_tdcm[[i]] <- coxph(Surv(tstart, tstop, event_true) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
+                             + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
+                             data = tdcm_df, cluster = joint_id)
   
   mard_tdcm[[i]] <- coxph(Surv(tstart, tstop, mard) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                          + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                          data = tdcm_df)
+                          + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
+                          data = tdcm_df, cluster = joint_id)
   
   mod_tdcm[[i]] <- coxph(Surv(tstart, tstop, mod) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                         + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                         data = tdcm_df)
+                         + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
+                         data = tdcm_df, cluster = joint_id)
   
   sidd_tdcm[[i]] <- coxph(Surv(tstart, tstop, sidd) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                          + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                          data = tdcm_df)
+                          + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
+                          data = tdcm_df, cluster = joint_id)
   
   # CARDIA has 0 people from SIRD 
-  tdcm_sird <- tdcm_df %>% dplyr::filter(!(study == "cardia"))
+  tdcm_sird <- tdcm_df %>% dplyr::filter(!study %in% c("cardia"))
   sird_tdcm[[i]] <- coxph(Surv(tstart, tstop, sird) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                          data = tdcm_sird)
+                          data = tdcm_df, cluster = joint_id)
+  
+  
+  
+  
 
 
 }
 
 
+unpooled_resuts <- bind_rows(
+  imap_dfr(overall_tdcm,function(m,index){
+    broom::tidy(m) %>% mutate(model = "Overall",iteration = index) %>% 
+      return(.)
+  }),
+  imap_dfr(mard_tdcm,function(m,index){
+    broom::tidy(m) %>% mutate(model = "MARD",iteration = index) %>% 
+      return(.)
+  }),
+  imap_dfr(mod_tdcm,function(m,index){
+    broom::tidy(m) %>% mutate(model = "MOD",iteration = index) %>% 
+      return(.)
+  }),
+  imap_dfr(sidd_tdcm,function(m,index){
+    broom::tidy(m) %>% mutate(model = "SIDD",iteration = index) %>% 
+      return(.)
+  }),
+  imap_dfr(sird_tdcm,function(m,index){
+    broom::tidy(m) %>% mutate(model = "SIRD",iteration = index) %>% 
+      return(.)
+  })
+  
+  
+)
+
+write_csv(unpooled_resuts, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_unpooled tdcm results.csv"))
 
 source("functions/pool_results.R")
 

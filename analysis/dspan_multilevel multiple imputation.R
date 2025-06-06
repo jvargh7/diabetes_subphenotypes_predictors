@@ -71,6 +71,10 @@ method[id_vars] <- ""
 
 method["weight"] <- "~I(bmi*(height/100)^2)"
 
+pred[c("homa2b","homa2ir"),] <- 0
+pred[c("homa2b","homa2ir"),c("insulinf","glucosef")] <- 1
+
+
 
 pred[,] <- 1         # Allow all variables as predictors by default
 

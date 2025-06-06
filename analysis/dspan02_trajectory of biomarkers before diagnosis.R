@@ -5,7 +5,9 @@ analytic_df = readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wor
   dplyr::filter(t <= 0 & t >= -15) %>% 
   arrange(joint_id,t) %>% 
   distinct(joint_id,t,.keep_all=TRUE) %>% 
-  mutate(across(one_of(c("subtype","race","study")),.fns=~as.factor(.)))
+  mutate(across(one_of(c("subtype","race","study")),.fns=~as.factor(.))) %>% 
+  mutate(dpp_intervention = case_when(dpp_intervention == 1 ~ "intervention arm",
+                                      TRUE ~ "others"))
 
 
 summary(analytic_df[,c("homa2b","homa2ir","t","subtype","censored_age","female","study","race")])
@@ -36,10 +38,10 @@ emm_options(pbkrtest.limit = 999999)
 
 
 library(lme4)
-m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + censored_age + female + study + race + (1|joint_id), data = analytic_df)
-m2 = lmer(bmi ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + (1|joint_id), data = analytic_df)
-m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + (1|joint_id), data = analytic_df)
-m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + (1|joint_id), data = analytic_df)
+m1 = lmer(log(homa2b) ~ subtype*ns(t, df = 3) + censored_age + female + study + race + dpp_intervention + (1|joint_id), data = analytic_df)
+m2 = lmer(bmi ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + dpp_intervention + (1|joint_id), data = analytic_df)
+m3 = lmer(hba1c ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + dpp_intervention + (1|joint_id), data = analytic_df)
+m4 = lmer(log(homa2ir) ~ subtype*ns(t,df = 3) + censored_age + female + study + race  + dpp_intervention + (1|joint_id), data = analytic_df)
 
 
 
@@ -77,7 +79,7 @@ fig_homa2b = out_combined %>%
   theme_bw() + 
   xlab("Time (years)") +
   ylab("HOMA2-%B") +
-  scale_color_manual(name="",values=cluster_not2d_colors)
+  scale_color_manual(name="",values=cluster_not2d_colors) 
 
 fig_homa2b
 
@@ -118,8 +120,7 @@ fig_homa2ir = out_combined %>%
   theme_bw() + 
   xlab("Time (years)") +
   ylab("HOMA2-IR") +
-  scale_color_manual(name="",values=cluster_not2d_colors) +
-  coord_cartesian(ylim = c(0, 4))
+  scale_color_manual(name="",values=cluster_not2d_colors) 
 
 
 
@@ -162,87 +163,5 @@ out_combined_not2d = out_combined %>%
          se_diff_not2d_diff = sqrt(se_diff^2 + not2d_se_diff^2)) %>% 
   mutate(diff_not2d_diff_lci = diff_not2d_diff - 1.96*se_diff_not2d_diff,
          diff_not2d_diff_uci = diff_not2d_diff + 1.96*se_diff_not2d_diff)
-
-
-
-
-
-
-
-# scatter plot show data availability
-
-
-fig_homa2b = out_combined %>% 
-  dplyr::filter(outcome == "HOMA2B") %>%
-  mutate(cluster = factor(group, levels = c("NOT2D","MOD","SIRD","SIDD","MARD"),
-                          labels = c("No T2D","MOD","SIRD","SIDD","MARD"))) %>%
-  ggplot(aes(x = x, y = predicted, color = cluster)) +
-  geom_point(
-    data = analytic_df,
-    aes(x = t, y = homa2b, color = cluster),
-    alpha = 0.25, shape = 16, size = 1
-  ) +
-  geom_path() +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = cluster), 
-              alpha = 0.1, color = NA, show.legend = FALSE) +
-  theme_bw() + 
-  xlab("Time (years)") +
-  ylab("HOMA2-%B") +
-  scale_color_manual(name = "", values = cluster_not2d_colors)
-
-
-# histogram show data availability
-
-df_bmi <- analytic_df %>%
-  dplyr::filter(!is.na(bmi))
-
-ggplot(df_bmi, aes(x = t, fill = subtype)) +
-  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
-  labs(
-    x = "Time (t)",
-    y = "Count of Available BMI",
-    title = "Histogram of Available BMI Data Points by Subtype Over Time"
-  ) +
-  theme_minimal() +
-  facet_wrap(~subtype, scales = "free_y")
-
-
-df_hba1c <- analytic_df %>%
-  dplyr::filter(!is.na(hba1c))
-
-ggplot(df_hba1c, aes(x = t, fill = subtype)) +
-  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
-  labs(
-    x = "Time (t)",
-    y = "Count of Available HbA1c"
-  ) +
-  theme_minimal() +
-  facet_wrap(~subtype, scales = "free_y")
-
-
-df_homa2b <- analytic_df %>%
-  dplyr::filter(!is.na(homa2b))
-
-ggplot(df_homa2b, aes(x = t, fill = subtype)) +
-  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
-  labs(
-    x = "Time (t)",
-    y = "Count of Available HOMA2-%B"
-  ) +
-  theme_minimal() +
-  facet_wrap(~subtype, scales = "free_y")
-
-
-df_homa2ir <- analytic_df %>%
-  dplyr::filter(!is.na(homa2ir))
-
-ggplot(df_homa2b, aes(x = t, fill = subtype)) +
-  geom_histogram(position = "identity", alpha = 0.5, bins = 30) +
-  labs(
-    x = "Time (t)",
-    y = "Count of Available HOMA2-IR"
-  ) +
-  theme_minimal() +
-  facet_wrap(~subtype, scales = "free_y")
 
 

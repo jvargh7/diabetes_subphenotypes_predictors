@@ -1,5 +1,11 @@
 # pool results following Rubin's rules
 
+
+
+
+
+
+
 pool_results <- function(model) {
   
   D = length(model)
@@ -7,14 +13,33 @@ pool_results <- function(model) {
   # Bind rows from all tidied models
   results <- bind_rows(lapply(model, broom::tidy))
   
-  # Prepare output dataframe with calculations
-  output <- data.frame(Estimate = results$estimate,
-                       SE = results$std.error,
-                       term = results$term
-                       # dfcom = dfcom_coxph  # Uncomment and define dfcom_coxph if needed
-  ) %>% 
-    mutate(W_d = SE^2) %>% 
-    group_by(term) %>% 
+  if("multinom" %in% class(model[[1]])){
+    print("Multinomial")
+    # Prepare output dataframe with calculations
+    input <- data.frame(Estimate = results$estimate,
+                         SE = results$std.error,
+                         term = results$term,
+                         y.level = results$y.level
+                         # dfcom = dfcom_coxph  # Uncomment and define dfcom_coxph if needed
+    ) %>% 
+      mutate(W_d = SE^2) %>% 
+      group_by(term,y.level) 
+    
+    
+    
+  } else{
+    # Prepare output dataframe with calculations
+    input <- data.frame(Estimate = results$estimate,
+                         SE = results$std.error,
+                         term = results$term
+                         # dfcom = dfcom_coxph  # Uncomment and define dfcom_coxph if needed
+    ) %>% 
+      mutate(W_d = SE^2) %>% 
+      group_by(term)
+    
+  }
+  
+  output <- input %>% 
     mutate(B_D = var(Estimate)) %>% 
     dplyr::summarize(B_D = mean(B_D), # B: Variance of estimates (between imputation variance)
                      W_D = mean(W_d), # \bar{V}: average of V_d over D imputed datasets
@@ -39,6 +64,8 @@ pool_results <- function(model) {
            uci = exp(U)
     ) %>% 
     rename(iv = term)
+  
+ 
   
   # Return the final output
   return(output)

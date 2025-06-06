@@ -26,9 +26,9 @@ coxph_coef <- read_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
                         labels = c("Overall", "MOD", "SIDD", "MARD", "SIRD"))) %>% 
   select(model, term, HR) %>% 
   mutate(term = factor(term,
-                       levels = c("studydppos","studyjhs","studymesa","raceNH White","raceNH Black","raceOther","earliest_age","female",
+                       levels = c("studydppos","studyjhs","studymesa","raceNH Black","raceHispanic","raceOther","earliest_age","female",
                                   "BMI","SBP","HbA1c","LDL","HOMA2-%B","HOMA2-IR","eGFR"),
-                       labels = c("Study DPPOS","Study JHS","Study MESA","NH White","NH Black","Other","Baseline age (years)","Female",
+                       labels = c("Study DPPOS","Study JHS","Study MESA","NH Black","Hispanic","Other","Baseline age (years)","Female",
                                   "BMI (kg/m²)","SBP (per 10 mmHg)","HbA1c (%)","LDL (per 10 mg/dL)","HOMA2-%B (per 10%)","HOMA2-IR (%)",
                                   "eGFR (per 10 mL/min/1.73 m²)"))) %>% 
   arrange(model, term) %>% 

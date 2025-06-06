@@ -12,6 +12,8 @@ if(Sys.info()["user"] == "JVARGH7"){
   cluster_labels = c("MOD","SIRD","MARD","SIDD")
   cluster_colors = c("MOD"="#F8BDA4","SIRD"="#A1C3AC","SIDD"="#ACD9EA","MARD"="#D0ACC9")
   cluster_colors_cosmos = c("MOD"="#F8BDA4","SIRD"="darkgreen","SIDD"="#4682b4","MARD"="#D0ACC9")
+  cluster_colors_ada = c("MOD"="#D55E00","SIRD"="darkgreen","SIDD"="#56B4E9","MARD"="#CC79A7")
+  
   path_diabetes_subphenotypes_predictors_folder <- "C:/Cloud/OneDrive - Emory University/Papers/Predictors of Subphenotypes"
   
   path_prediabetes_subphenotypes_folder <- "C:/Cloud/OneDrive - Emory University/Papers/Subphenotypes of Prediabetes"
@@ -29,6 +31,7 @@ if(Sys.info()["user"] == "JGUO258"){
   cluster_labels = c("MOD","SIRD","MARD","SIDD")
   cluster_colors = c("MOD"="#F8BDA4","SIRD"="#A1C3AC","SIDD"="#ACD9EA","MARD"="#D0ACC9")
   cluster_colors_cosmos = c("MOD"="#F8BDA4","SIRD"="darkgreen","SIDD"="#4682b4","MARD"="#D0ACC9")
+  cluster_colors_ada = c("MOD"="#D55E00","SIRD"="darkgreen","SIDD"="#56B4E9","MARD"="#CC79A7")
   
   path_nhanes_ckm_folder <- "C:/Users/JGUO258/OneDrive - Emory/Papers/NHANES CKM Cascade"
   path_g2a_longitudinal_folder <- "C:/Users/JGUO258/OneDrive - Emory/Papers/Crossnational Longitudinal Concordance"
