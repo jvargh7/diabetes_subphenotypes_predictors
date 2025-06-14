@@ -3,6 +3,7 @@ rm(list=ls());gc();source(".Rprofile")
 library(ggplot2)
 
 boxplot_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>%
+  dplyr::filter(age == censored_age) %>% 
   dplyr::select("joint_id","subtype","hba1c", "sbp", "dbp", "ldlc", "hdlc", "bmi","homa2b","homa2ir","egfr_ckdepi_2021") %>% 
   mutate(subtype = factor(subtype,levels = c("NOT2D",'MARD','SIDD','SIRD','MOD'),labels = c("No T2D",'MARD','SIDD','SIRD','MOD')))
 
@@ -17,7 +18,7 @@ fig_A = boxplot_df %>%
   ylab(bquote('BMI ( kg' /m^2~')')) +
   scale_y_continuous(limits=c(10,70),breaks=seq(10,70,by=10)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -28,7 +29,7 @@ fig_B = boxplot_df %>%
   ylab("SBP (mmHg)") +
   scale_y_continuous(limits=c(50,250),breaks=seq(50,250,by=50)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14))
 
@@ -39,7 +40,7 @@ fig_C = boxplot_df %>%
   ylab("HbA1c (%)") +
   scale_y_continuous(limits=c(3,15),breaks=seq(3,15,by=3)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -50,7 +51,7 @@ fig_D = boxplot_df %>%
   ylab("eGFR (per 10 mL/min/1.73 m²)") +
   scale_y_continuous(limits=c(0,180),breaks=seq(0,180,by=60)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -61,7 +62,7 @@ fig_E = boxplot_df %>%
   ylab("LDL Cholesterol (mg/dL)") +
   scale_y_continuous(limits=c(0,250),breaks=seq(0,250,by=50)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -72,7 +73,7 @@ fig_F = boxplot_df %>%
   ylab("HDL Cholesterol (mg/dL)") +
   scale_y_continuous(limits=c(0,100),breaks=seq(0,100,by=20)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -83,7 +84,7 @@ fig_G = boxplot_df %>%
   ylab("HOMA2-%B (%)") +
   scale_y_continuous(limits=c(0,300),breaks=seq(0,300,by=100)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -94,7 +95,7 @@ fig_H = boxplot_df %>%
   ylab("HOMA2-IR (%)") +
   scale_y_continuous(limits=c(0,10),breaks=seq(0,10,by=2.5)) +
   theme_bw() +
-  scale_fill_manual(name="",values=cluster_colors_ada) +
+  scale_fill_manual(name="",values=cluster_not2d_colors) +
   theme_bw(base_size = 14) +
   theme(legend.text = element_text(size = 14)) 
 
@@ -115,6 +116,6 @@ ggarrange(
           nrow=2,
           ncol=4,
           common.legend = TRUE,legend = "bottom") %>% 
-  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/ADA plots/distribution of clinical characteristics by subtype.png"),width=14,height =5.5)
+  ggsave(.,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/ADA plots/distribution of clinical characteristics by subtype at last follow-up.png"),width=14,height =5.5)
 
 

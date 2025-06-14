@@ -50,41 +50,39 @@ ggsave(fig_data,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/
 
 
 # by visit year and study -------------------------------------------
-data <- data.frame(
-  Study = rep(c("CARDIA", "DPP/OS", "JHS", "MESA"), each = 21),
-  Year = rep(2000:2020, times = 4),
-  HbA1c = c(
-    # CARDIA: collected at 2000, 2005, 2010
-    rep(0, 0), rep(1, 1), rep(0, 4), rep(1, 1), rep(0, 4), rep(1, 1), rep(0, 10),
-    
-    # DPP/OS: annual measurement
-    rep(1, 21),
-    
-    # JHS: Visit 1 (2000–2004), Visit 2 (2005–2008), Visit 3 (2009–2013)
-    rep(1, 5), rep(1, 4), rep(1, 5), rep(0, 7),
-    
-    # MESA: Visit 1 (2000–2002), Visit 5 (2010–2012), Visit 6 (2016–2018)
-    rep(1, 3), rep(0, 7), rep(1, 3), rep(0, 3), rep(1, 3), rep(0, 2)
-  )
-)
+library(ggplot2)
+library(xlsx)
 
-data$Study <- factor(data$Study, levels = c("MESA",'JHS','DPP/OS','CARDIA'))
+a1c_df <- read.xlsx("data/table_hba1c availability by study over time.xlsx") %>%
+  mutate(study = factor(study, levels = c("mesa","jhs","dppos","cardia"),
+                        labels = c("MESA","JHS","DPP/OS","CARDIA"))) %>% 
+  rowwise() %>%
+  mutate(year = list(seq(visit_start, visit_stop))) %>%
+  unnest(cols = c(year))  # this ensures `year` becomes a flat column
 
-fig_year <- ggplot(data, aes(x = Year, y = Study)) +
-  geom_point(aes(shape = factor(HbA1c), color = factor(HbA1c), fill = factor(HbA1c)), size = 3, stroke = 1.2) +
-  scale_shape_manual(values = c(1, 16), labels = c("Not Collected", "Collected")) +
-  scale_color_manual(values = c("blue", "red")) +
-  scale_fill_manual(values = c("white", "red")) +
-  labs(x = "Calendar Year", y = NULL, shape = "HbA1c Status", color = NULL) +
+fig_year <- ggplot() +
+  geom_segment(data = a1c_df %>% distinct(study, visit, visit_start, visit_stop),
+               aes(x = visit_start, xend = visit_stop,
+                   y = study, yend = study),
+               color = "blue", size = 0.7) +
+  geom_point(data = a1c_df,
+             aes(x = year, y = study,
+                 shape = factor(a1c_ava),
+                 fill = factor(a1c_ava)),
+             color = "red", size = 2) +
+  scale_shape_manual(values = c(1, 21), labels = c("No HbA1c", "Has HbA1c")) +
+  scale_fill_manual(values = c(NA, "red"), guide = "none") +
+  labs(x = "Calendar Year", y = "Study", shape = "HbA1c Availability") +
+  scale_x_continuous(breaks = seq(1980, 2025, 5), limits = c(1980, 2025)) +
   theme_minimal(base_size = 15) +
   theme(
-    plot.background = element_rect(color = "black", fill = NA, size = 1),
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    axis.title.y = element_blank(),
-    legend.position = "none"
-  ) +
-  scale_x_continuous(limits = c(1985, 2020), breaks = seq(1985, 2020, by = 5))
-
+    legend.position = "none",
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 1),
+    panel.grid.major = element_line(color = "gray80"),
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    axis.title = element_text(face = "bold")
+  )
 
 ggsave(fig_year,filename=paste0(path_diabetes_subphenotypes_predictors_folder,"/figures/data availability of hba1c by calendar year and study.jpg"),width = 10,height = 6)
 

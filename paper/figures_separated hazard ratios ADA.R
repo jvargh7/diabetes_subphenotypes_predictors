@@ -49,7 +49,7 @@ for (term_i in unique_terms) {
     geom_pointrange(position = position_dodge(width = 0.5), size = 1) +
     geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
     scale_color_manual(values = cluster_all_colors) +
-    scale_x_continuous(limits = c(0, 4), breaks = seq(0, 4, 0.5)) +
+    scale_x_continuous(limits = c(0, 6.6), breaks = seq(0, 6, 1)) +
     labs(
       title = paste0(term_i),
       x = "Hazard ratio (95% CI)",

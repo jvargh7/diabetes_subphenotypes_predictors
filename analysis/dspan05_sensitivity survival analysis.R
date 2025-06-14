@@ -8,6 +8,7 @@ library(broom)
 library(cmprsk)
 library(nnet)
 source("functions/egfr_ckdepi_2021.R")
+
 mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs.RDS"))
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
@@ -109,6 +110,7 @@ for (i in 1:length(analytic_dfs)) {
                                TRUE ~ cluster)) %>%
     mutate(subtype = factor(subtype, levels=c("NOT2D","MARD","MOD","SIDD","SIRD")))
   
+  # Multinomial models
   multinom_all[[i]] <- nnet::multinom(subtype ~ log(time_to_event) + study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
                                       + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention,
                                       data = coxph_df)
@@ -138,7 +140,7 @@ for (i in 1:length(analytic_dfs)) {
   #                          + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
   #                          data = coxph_df)
   # 
-  # 
+  # SDH
   # mard_sdh[[i]] <- crr(coxph_df$time_to_event,coxph_df$cluster_numeric,cengroup = 0,failcode=1,
   #                         cov1 = coxph_df[,c("study_cardia","study_dppos","study_jhs","female","race_black","race_hispanic","race_other","earliest_age",
   #                                            "bmi","hba1c","homa2b_scaled","homa2ir","ldlc_scaled",
@@ -201,7 +203,7 @@ unpooled_resuts_coxph <- bind_rows(
   
 )
 
-write_csv(unpooled_resuts_coxph, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_unpooled coxph results.csv"))
+write_csv(unpooled_resuts_coxph, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_unpooled coxph results.csv"))
 
 
 
@@ -214,42 +216,42 @@ coxph_results <- bind_rows(
   pool_results(sidd_coxph) %>% mutate(model = "SIDD"),
   pool_results(sird_coxph) %>% mutate(model = "SIRD")
 ) %>% 
-  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_pooled cox ph results.csv"))
+  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_pooled cox ph results.csv"))
 
 
 
 # create Schoenfeld residual plots
-save_cox_zph_plots <- function(ph_test, file_prefix = "model", width = 1200, height = 1200, res = 150) {
-  # Number of covariates (exclude "GLOBAL")
-  n_covariates <- nrow(ph_test$table) - 1
-  n_row <- ceiling(sqrt(n_covariates))
-  n_col <- ceiling(n_covariates / n_row)
-  
-  png(paste0(file_prefix, ".png"), width = width, height = height, res = res)
-  par(mfrow = c(n_row, n_col))
-  plot(ph_test)
-  par(mfrow = c(1, 1))
-  dev.off()
-}
-
-i <- 1  # choose the imputation index
-
-save_cox_zph_plots(ph_tests_overall[[i]], "cox_zph_overall")
-save_cox_zph_plots(ph_tests_mard[[i]],    "cox_zph_mard")
-save_cox_zph_plots(ph_tests_mod[[i]],     "cox_zph_mod")
-save_cox_zph_plots(ph_tests_sidd[[i]],    "cox_zph_sidd")
-save_cox_zph_plots(ph_tests_sird[[i]],    "cox_zph_sird")
-
-# for each model
-n_imputations <- length(ph_tests_overall)
-
-for (i in seq_len(n_imputations)) {
-  save_cox_zph_plots(ph_tests_overall[[i]], paste0("cox_zph_overall_imp", i))
-  save_cox_zph_plots(ph_tests_mard[[i]],    paste0("cox_zph_mard_imp", i))
-  save_cox_zph_plots(ph_tests_mod[[i]],     paste0("cox_zph_mod_imp", i))
-  save_cox_zph_plots(ph_tests_sidd[[i]],    paste0("cox_zph_sidd_imp", i))
-  save_cox_zph_plots(ph_tests_sird[[i]],    paste0("cox_zph_sird_imp", i))
-}
+# save_cox_zph_plots <- function(ph_test, file_prefix = "model", width = 1200, height = 1200, res = 150) {
+#   # Number of covariates (exclude "GLOBAL")
+#   n_covariates <- nrow(ph_test$table) - 1
+#   n_row <- ceiling(sqrt(n_covariates))
+#   n_col <- ceiling(n_covariates / n_row)
+#   
+#   png(paste0(file_prefix, ".png"), width = width, height = height, res = res)
+#   par(mfrow = c(n_row, n_col))
+#   plot(ph_test)
+#   par(mfrow = c(1, 1))
+#   dev.off()
+# }
+# 
+# i <- 1  # choose the imputation index
+# 
+# save_cox_zph_plots(ph_tests_overall[[i]], "cox_zph_overall")
+# save_cox_zph_plots(ph_tests_mard[[i]],    "cox_zph_mard")
+# save_cox_zph_plots(ph_tests_mod[[i]],     "cox_zph_mod")
+# save_cox_zph_plots(ph_tests_sidd[[i]],    "cox_zph_sidd")
+# save_cox_zph_plots(ph_tests_sird[[i]],    "cox_zph_sird")
+# 
+# # for each model
+# n_imputations <- length(ph_tests_overall)
+# 
+# for (i in seq_len(n_imputations)) {
+#   save_cox_zph_plots(ph_tests_overall[[i]], paste0("cox_zph_overall_imp", i))
+#   save_cox_zph_plots(ph_tests_mard[[i]],    paste0("cox_zph_mard_imp", i))
+#   save_cox_zph_plots(ph_tests_mod[[i]],     paste0("cox_zph_mod_imp", i))
+#   save_cox_zph_plots(ph_tests_sidd[[i]],    paste0("cox_zph_sidd_imp", i))
+#   save_cox_zph_plots(ph_tests_sird[[i]],    paste0("cox_zph_sird_imp", i))
+# }
 
 
 # Fine-Gray SDH ------------
@@ -276,7 +278,7 @@ unpooled_resuts_sdh <- bind_rows(
   
 )
 
-write_csv(unpooled_resuts_sdh, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_unpooled sdh results.csv"))
+write_csv(unpooled_resuts_sdh, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_unpooled sdh results.csv"))
 
 
 # Fine-Gray Models similar to Cox PH models 
@@ -291,7 +293,7 @@ sdh_results <- bind_rows(
   pool_results(sidd_sdh) %>% mutate(model = "SIDD"),
   pool_results(sird_sdh) %>% mutate(model = "SIRD")
 ) %>% 
-  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_pooled sdh results.csv"))
+  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_pooled sdh results.csv"))
 
 
 # Multinomial models -----------
@@ -299,4 +301,4 @@ sdh_results <- bind_rows(
 multinom_results <- pool_results(multinom_all) 
 
 multinom_results %>% 
-  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan03_pooled multinomial results.csv"))
+  write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_pooled multinomial results.csv"))
