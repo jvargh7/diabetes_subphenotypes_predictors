@@ -24,7 +24,7 @@ for (var in vars_to_check) {
   n_all_na <- analytic_df %>%
     group_by(joint_id) %>%
     summarise(all_na = all(is.na(.data[[var]]))) %>%
-    filter(all_na) %>%
+    dplyr::filter(all_na) %>%
     nrow()
   if (n_all_na > 0) problem_vars <- c(problem_vars, var)
 }

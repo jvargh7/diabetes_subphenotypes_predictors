@@ -25,7 +25,7 @@ baseline_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/wo
 
 
 c_vars = c("age","dmagediag","bmi","hba1c","homa2b","homa2ir","sbp","dbp","ldlc","hdlc",
-           "insulinf","glucosef","egfr","tgl","tg_hdl","fu_time","visit_number")
+           "insulinf","glucosef","egfr_ckdepi_2021","tgl","tg_hdl","fu_time","visit_number")
 p_vars = c("female")
 g_vars = c("study","race")
 
@@ -46,7 +46,7 @@ lastfu_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/work
 
 
 c_vars = c("age","dmagediag","bmi","hba1c","homa2b","homa2ir","sbp","dbp","ldlc","hdlc",
-           "insulinf","glucosef","egfr","tgl","tg_hdl")
+           "insulinf","glucosef","egfr_ckdepi_2021","tgl","tg_hdl")
 p_vars = c("female")
 g_vars = c("study","race")
 

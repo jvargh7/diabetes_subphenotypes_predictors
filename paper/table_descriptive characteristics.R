@@ -3,7 +3,7 @@ rm(list = ls());gc();source(".Rprofile")
 
 # predictors  analysis ---------------------------
 mean_vars = c("age","dmagediag","bmi","sbp","dbp","ldlc","hdlc",
-              "insulinf","glucosef","egfr","tgl","tg_hdl")
+              "insulinf","glucosef","egfr_ckdepi_2021","tgl","tg_hdl")
 
 median_vars = c("hba1c","homa2b","homa2ir","fu_time","visit_number")
 
