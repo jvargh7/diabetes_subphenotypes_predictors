@@ -25,6 +25,7 @@ sird_coxph <- list()
 mod_sdh <- mard_sdh <- sidd_sdh <- sird_sdh <- list()
 
 multinom_all <- list()
+multinom_ref <- list()
 
 ph_tests_overall <- vector("list", length(overall_coxph))
 ph_tests_mard    <- vector("list", length(mard_coxph))
@@ -116,6 +117,12 @@ for (i in 1:length(analytic_dfs)) {
                                       + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention,
                                       data = coxph_df)
   
+  coxph_ref <- coxph_df %>% 
+    mutate(subtype <- relevel(subtype, ref = "MARD"))
+  # reference: MARD
+  multinom_ref[[i]] <- nnet::multinom(subtype ~ log(time_to_event) + study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
+                                      + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention,
+                                      data = coxph_ref)
   
   # Cox PH models
   
@@ -297,6 +304,8 @@ sdh_results <- bind_rows(
 # Multinomial models -----------
 
 multinom_results <- pool_results(multinom_all) 
+multinom_ref_results <- pool_results(multinom_ref) 
 
-multinom_results %>% 
+bind_rows(multinom_results %>% mutate(reference = "NOT2D"),
+          multinom_ref_results %>% mutate(reference = "MARD")) %>% 
   write_csv(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan05_pooled multinomial results.csv"))

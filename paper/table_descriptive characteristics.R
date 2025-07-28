@@ -46,3 +46,37 @@ table_df_lastfu <- read_csv("analysis/dspan04_predictors descriptive characteris
   dplyr::select(variable,group,Total,NOT2D,MARD,MOD,SIDD,SIRD) %>% 
   write_csv(.,"paper/table_predictors descriptive characteristics by subtype at last follow-up.csv")
 
+
+
+# Percentage of missing values by subtype ---------------------------------------
+
+clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS"))
+
+vars <- c("hba1c", "bmi", "homa2b", "homa2ir", "sbp", "sbp", "ldlc", "hdlc", 
+          "insulinf","glucosef","egfr_ckdepi_2021","tgl")
+
+
+na_summary <- clean_df %>%
+  select(subtype, all_of(vars)) %>%
+  mutate(subtype = ifelse(is.na(subtype), "Missing", as.character(subtype))) %>%
+  pivot_longer(cols = all_of(vars), names_to = "variable", values_to = "value") %>%
+  group_by(variable, subtype) %>%
+  summarise(
+    na_percent = mean(is.na(value)) * 100,
+    .groups = "drop"
+  ) %>%
+  pivot_wider(names_from = subtype, values_from = na_percent) %>%
+  # Add overall NA % column
+  left_join(
+    clean_df %>%
+      select(all_of(vars)) %>%
+      pivot_longer(cols = everything(), names_to = "variable", values_to = "value") %>%
+      group_by(variable) %>%
+      summarise(Overall = mean(is.na(value)) * 100, .groups = "drop"),
+    by = "variable"
+  ) %>%
+  select(variable, Overall, NOT2D, MARD, MOD, SIDD, SIRD) %>%
+  mutate(across(-variable, ~ round(., 1))) %>% 
+  write.csv(.,"paper/table_percentage of missing values by subtype.csv")
+
+
