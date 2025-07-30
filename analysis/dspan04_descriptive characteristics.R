@@ -49,9 +49,6 @@ lastfu_df %>%
 
 # last FU
 lastfu_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>%
-  group_by(joint_id) %>% 
-  mutate(fu_time = censored_age - earliest_age) %>% 
-  ungroup() %>% 
   mutate(tg_hdl = tgl/hdlc) %>% 
   # only last follow-up
   dplyr::filter(age == censored_age)
@@ -108,13 +105,30 @@ na_summary <- clean_df %>%
 
 
 
+# follow-up duration ----------------------------------
+clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>%
+  group_by(joint_id) %>% 
+  mutate(fu_time = first(censored_age) - first(earliest_age)) %>% 
+  ungroup()
 
 
+fu_time_summary <- clean_df %>%
+  group_by(subtype) %>%
+  summarise(
+    median = median(fu_time, na.rm = TRUE),
+    q25 = quantile(fu_time, 0.25, na.rm = TRUE),
+    q75 = quantile(fu_time, 0.75, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-
-
-
-
-
-
+bind_rows(
+  fu_time_summary,
+  clean_df %>%
+    summarise(
+      subtype = "Overall",
+      median = median(fu_time, na.rm = TRUE),
+      q25 = quantile(fu_time, 0.25, na.rm = TRUE),
+      q75 = quantile(fu_time, 0.75, na.rm = TRUE)
+    )
+)
 
