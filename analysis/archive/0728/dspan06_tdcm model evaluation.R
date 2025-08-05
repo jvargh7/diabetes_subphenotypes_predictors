@@ -74,183 +74,102 @@ for(i in 1:mi_dfs$m) {
 }
 
 
+################# SENSITIVITY, SPECIFICITY, F1 SCORE ###########################
 
-############  C-INDEX ############
+# get predicted probabilities, concordance ---- takes more than 12h
+source("functions/fit_predict_boot_model.R")
 
-source("functions/model_evaluate_index.R")
+library(boot)
+library(arrow)
 
-bootstrap_cindex_results <- list()
-
-event_list <- c("sird", "sidd", "mod", "mard", "event_true")
-
-# Step 1: Collect all C-index values from each imputation for each event
-all_bootstrap_values <- list()
-
-for (event_var in event_list) {
-  all_cindex <- c()
-  
-  for (i in 1:length(tdcm_dfs)) {
-    df <- tdcm_dfs[[i]]
-    unique_ids <- unique(df$joint_id)
-    
-    boot_result <- boot(
-      data = unique_ids,
-      statistic = function(ids, i) {
-        sampled_ids <- ids[i]
-        subset_data <- df[df$joint_id %in% sampled_ids, ]
-        c_index_function(subset_data, 1:length(sampled_ids), event_var)
-      },
-      R = 200
-    )
-    
-    all_cindex <- c(all_cindex, na.omit(boot_result$t))
-  }
-  
-  all_bootstrap_values[[event_var]] <- all_cindex
-}
-
-# Step 2: Summarize pooled C-index results
-final_cindex_summary <- do.call(rbind, lapply(names(all_bootstrap_values), function(event_name) {
-  values <- all_bootstrap_values[[event_name]]
-  data.frame(
-    event = event_name,
-    mean_cindex = round(mean(values, na.rm = TRUE), 4),
-    CI_lower = round(quantile(values, 0.025, na.rm = TRUE), 4),
-    CI_upper = round(quantile(values, 0.975, na.rm = TRUE), 4)
-  )
-}))
-
-
-########### SENSITIVITY & SPECIFICITY ########### 
-
-source("functions/model_evaluate_index.R")
-
-# Define events
-event_list <- c("sird", "sidd", "mod", "mard", "event_true")
-
-# Initialize storage
-pooled_sens_spec_results <- data.frame()
-
-# Loop over events
-set.seed(123)
-for (event_var in event_list) {
-  pooled_sens <- c()
-  pooled_spec <- c()
-  pooled_f1 <- c()
-  
-  # Loop over imputations
-  for (i in 1:length(tdcm_dfs)) {
-    df <- tdcm_dfs[[i]]
-    unique_ids <- unique(df$joint_id)
-    
-    boot_result <- boot(
-      data = unique_ids,
-      statistic = function(ids, i) {
-        sampled_ids <- ids[i]
-        subset_data <- df[df$joint_id %in% sampled_ids, ]
-        sens_spec_function(subset_data, 1:length(sampled_ids), event_var)
-      },
-      R = 200
-    )
-    
-    pooled_sens <- c(pooled_sens, na.omit(boot_result$t[, 1]))
-    pooled_spec <- c(pooled_spec, na.omit(boot_result$t[, 2]))
-    pooled_f1   <- c(pooled_f1,   na.omit(boot_result$t[, 3]))
-  }
-  
-  # Summarize across all imputations
-  pooled_sens_spec_results <- rbind(pooled_sens_spec_results, data.frame(
-    event = event_var,
-    mean_sensitivity = round(mean(pooled_sens, na.rm = TRUE), 4),
-    CI_sens_lower = round(quantile(pooled_sens, 0.025, na.rm = TRUE), 4),
-    CI_sens_upper = round(quantile(pooled_sens, 0.975, na.rm = TRUE), 4),
-    mean_specificity = round(mean(pooled_spec, na.rm = TRUE), 4),
-    CI_spec_lower = round(quantile(pooled_spec, 0.025, na.rm = TRUE), 4),
-    CI_spec_upper = round(quantile(pooled_spec, 0.975, na.rm = TRUE), 4),
-    mean_f1 = round(mean(pooled_f1, na.rm = TRUE), 4),
-    CI_f1_lower = round(quantile(pooled_f1, 0.025, na.rm = TRUE), 4),
-    CI_f1_upper = round(quantile(pooled_f1, 0.975, na.rm = TRUE), 4)
-  ))
-}
-
-
-library(glue)
-
-final_table <- merge(final_cindex_summary, pooled_sens_spec_results, by = "event") %>% 
-  mutate(
-    c_index = glue("{round(mean_cindex, 3)} ({round(CI_lower, 3)}, {round(CI_upper, 3)})"),
-    sensitivity = glue("{round(mean_sensitivity, 3)} ({round(CI_sens_lower, 3)}, {round(CI_sens_upper, 3)})"),
-    specificity = glue("{round(mean_specificity, 3)} ({round(CI_spec_lower, 3)}, {round(CI_spec_upper, 3)})"),
-    f1_score = glue("{round(mean_f1, 3)} ({round(CI_f1_lower, 3)}, {round(CI_f1_upper, 3)})")
-  ) %>% 
-  select(event,c_index,sensitivity,specificity,f1_score)
-
-write.csv(final_table, "analysis/dspan06_pooled model evaluation index.csv", row.names = FALSE)
-
-
-
-
-
-
-
-
-
-
-############## calibration curve (need to be fixed later) ##############
-
-bootstrap_cal_slope <- function(data, indices, event_name) {
-  sampled_ids <- unique(data$joint_id)[indices]
-  d <- data[data$joint_id %in% sampled_ids, ]
-  
-  formula_str <- as.formula(paste0("Surv(tstart, tstop, ", event_name, ") ~ study + female + race + earliest_age + bmi + hba1c + ",
-                                   "homa2b_scaled + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention"))
-  fit <- try(coxph(formula_str, data = d), silent = TRUE)
-  if (inherits(fit, "try-error")) return(NA)
-  
-  d$lp <- predict(fit, type = "lp")
-  cal_model <- try(coxph(Surv(tstart, tstop, d[[event_name]]) ~ lp, data = d), silent = TRUE)
-  if (inherits(cal_model, "try-error")) return(NA)
-  
-  return(coef(cal_model)[1])
-}
-
-
-source("functions/model_evaluate_index.R")
-
-library(rms)
-
-event_list <- c("sird", "sidd", "mod", "mard", "event_true")
-pooled_calibration_slopes <- data.frame()
-
-
-set.seed(123)
-results <- data.frame()
+event_list <- c("event_true", "mod", "mard", "sidd", "sird")
 
 for (event_name in event_list) {
-  slopes_all <- c()
+  all_results <- list()
   
-  for (df in tdcm_dfs) {
+  for (m in 1:length(tdcm_dfs)) {
+    df <- tdcm_dfs[[m]]
     unique_ids <- unique(df$joint_id)
     
-    boot_obj <- boot(
-      data = unique_ids,
-      statistic = function(ids, i) bootstrap_cal_slope(df, i, event_name),
-      R = 200
-    )
-    
-    slopes <- na.omit(boot_obj$t)
-    slopes_all <- c(slopes_all, slopes)
+    for (b in 1:200) {
+      set.seed(1000 + m * 200 + b)
+      sampled_ids <- sample(unique_ids, length(unique_ids), replace = TRUE)
+      
+      res <- fit_predict_boot_model(df, which(unique_ids %in% sampled_ids), event_name, m, b)
+      if (!is.null(res)) {
+        all_results[[length(all_results) + 1]] <- res
+      }
+    }
   }
   
-  results <- rbind(results, data.frame(
-    event = event_name,
-    mean_slope = round(mean(slopes_all), 4),
-    CI_lower = round(quantile(slopes_all, 0.025), 4),
-    CI_upper = round(quantile(slopes_all, 0.975), 4)
-  ))
+  combined_df <- do.call(rbind, all_results)
+  write_parquet(combined_df, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_", event_name, "_df.parquet"))
 }
 
+# compute metrics ----------------------------------------------
 
-# Save or print result
-write.csv(pooled_calibration_slopes, "analysis/pooled calibration slopes.csv", row.names = FALSE)
-print(pooled_calibration_slopes)
+t2d_df <- read_parquet(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_event_true_df.parquet"))
+mard_df <- read_parquet(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_mard_df.parquet"))
+mod_df <- read_parquet(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_mod_df.parquet"))
+sidd_df <- read_parquet(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_sidd_df.parquet"))
+sird_df <- read_parquet(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan06_sird_df.parquet"))
+
+
+# Function to compute metrics at multiple cutoffs
+source("functions/evaluate_metrics_with_ci.R")
+
+metrics_t2d <- evaluate_metrics_with_ci(t2d_df, "T2D")
+metrics_mard <- evaluate_metrics_with_ci(mard_df, "MARD")
+metrics_mod  <- evaluate_metrics_with_ci(mod_df, "MOD")
+metrics_sidd <- evaluate_metrics_with_ci(sidd_df, "SIDD")
+metrics_sird <- evaluate_metrics_with_ci(sird_df, "SIRD")
+
+all_cutoff_metrics <- bind_rows(metrics_t2d, metrics_mard, metrics_mod, metrics_sidd, metrics_sird) %>% 
+  mutate(
+    sensitivity = glue("{round(sensitivity, 3)} ({round(sens_lower, 3)}, {round(sens_upper, 3)})"),
+    specificity = glue("{round(specificity, 3)} ({round(spec_lower, 3)}, {round(spec_upper, 3)})"),
+    f1_score    = glue("{round(f1, 3)} ({round(f1_lower, 3)}, {round(f1_upper, 3)})"),
+    c_index     = glue("{round(c_index, 3)} ({round(c_index_lower, 3)}, {round(c_index_upper, 3)})")
+  ) %>%
+  select(event, cutoff, sensitivity, specificity, f1_score, c_index) %>% 
+  write.csv(., "analysis/dspan06_metrics at multiple cutoffs.csv", row.names = FALSE)
+
+
+
+################# CALIBRATION SLOPE ###########################
+
+source("functions/get_calibration_slope.R")
+
+cal_slope_results <- data.frame()
+
+set.seed(123)
+for (m in 1:length(tdcm_dfs)) {
+  df <- tdcm_dfs[[m]]
+  unique_ids <- unique(df$joint_id)
+  
+  for (event_name in c("event_true", "mod", "mard", "sidd", "sird")) {
+    for (b in 1:200) {
+      sampled_ids <- sample(unique_ids, length(unique_ids), replace = TRUE)
+      d_boot <- df[df$joint_id %in% sampled_ids, ]
+      
+      slope <- get_calibration_slope(d_boot, event_name)
+      
+      cal_slope_results <- rbind(cal_slope_results, data.frame(
+        m = m,
+        b = b,
+        event = event_name,
+        calibration_slope = slope
+      ))
+    }
+  }
+}
+
+pooled_slope <- cal_slope_results %>%
+  group_by(event) %>%
+  summarize(mean_slope = round(mean(calibration_slope, na.rm = TRUE), 3),
+            lower = round(quantile(calibration_slope, 0.025, na.rm = TRUE), 3),
+            upper = round(quantile(calibration_slope, 0.975, na.rm = TRUE), 3)) %>% 
+  mutate(slope = glue("{round(mean_slope, 3)} ({round(lower, 3)}, {round(upper, 3)})")) %>% 
+  select(event, slope) %>% 
+  write.csv(., "analysis/dspan06_pooled calibration slopes.csv", row.names = FALSE)
+
