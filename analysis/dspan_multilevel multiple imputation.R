@@ -98,4 +98,63 @@ df <- complete(mi_dfs, action = 1)
 
 saveRDS(mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs_new.RDS"))
 
+# Correlation heatmap for specified variables
+library(corrplot)
+library(ggplot2)
+library(reshape2)
+
+# Variables for correlation analysis
+corr_vars <- c("bmi", "hba1c", "homa2b", "homa2ir", "ldlc", "hdlc", "sbp", "dbp", "egfr_ckdepi_2021")
+
+# Calculate correlation matrix using complete data (first imputed dataset)
+df_complete <- complete(mi_dfs, action = 1)
+
+# Select only the variables we want and remove NA values
+corr_data <- df_complete %>%
+  dplyr::select(all_of(corr_vars)) %>%
+  na.omit()
+
+# Calculate correlation matrix
+corr_matrix <- cor(corr_data, use = "complete.obs")
+
+# Create correlation heatmap using corrplot
+png(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/figures/correlation_heatmap_corrplot.png"), 
+    width = 800, height = 800, res = 120)
+corrplot(corr_matrix, 
+         method = "color", 
+         type = "upper", 
+         order = "hclust",
+         addCoef.col = "black", 
+         tl.col = "black", 
+         tl.srt = 45,
+         number.cex = 0.7,
+         col = colorRampPalette(c("blue", "white", "red"))(200))
+dev.off()
+
+# Alternative: Create correlation heatmap using ggplot2
+corr_melted <- melt(corr_matrix)
+
+p_corr <- ggplot(corr_melted, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = round(value, 2)), color = "black", size = 3) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1, 1), space = "Lab",
+                       name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(title = "Correlation Heatmap of Clinical Variables")
+
+ggsave(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/figures/correlation_heatmap_ggplot.png"), 
+       plot = p_corr, width = 10, height = 8, dpi = 300)
+
+# Print correlation matrix
+print("Correlation Matrix:")
+print(round(corr_matrix, 3))
+
+# Print summary statistics
+cat("\nSample size for correlation analysis:", nrow(corr_data), "\n")
+cat("Variables included:", paste(corr_vars, collapse = ", "), "\n")
+
 
