@@ -42,10 +42,6 @@ for(i in 1:mi_dfs$m) {
   analytic_df <- df %>% 
     arrange(study,study_id,joint_id,age) %>% 
     group_by(study,study_id,joint_id) %>%
-    mutate(event = case_when(
-      newdm_event == 1 & (age == censored_age) ~ 1,  # event is 1 for the last wave
-      TRUE ~ 0 
-    )) %>%
     ungroup() 
   
 
@@ -61,6 +57,8 @@ for(i in 1:mi_dfs$m) {
   
   coxph_df <- cluster_df %>%
     dplyr::filter(age == earliest_age) %>% 
+    # For baseline analysis, use the original newdm_event as the outcome
+    mutate(event = newdm_event) %>%
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
@@ -111,21 +109,22 @@ for(i in 1:mi_dfs$m) {
 
 
 
-source("functions/evaluate_coxph01.R")
+source("functions/evaluate_coxph_quantile.R")
 
 
 # Prepare list to store evaluation metrics for each model
 model_names <- c("overall_coxph", "mard_coxph", "mod_coxph", "sidd_coxph", "sird_coxph")
 pooled_results <- setNames(vector("list", length(model_names)), model_names)
 
-time_horizon <- 5  # Example: 5-year risk
+time_horizon <- 8  # Use 8-year risk for baseline analysis (median follow-up time)
 
 for (model_name in model_names) {
   pooled_metrics <- map2(1:10, coxph_dfs, function(i, df) {
     model_list <- get(model_name)
     model <- model_list[[i]]
-    eval_df <- df %>% mutate(event = ifelse(newdm_event == 1 & time_to_event <= time_horizon, 1, 0))
-    evaluate_coxph(model, eval_df, time_horizon)
+    # For baseline analysis, the event is whether diabetes occurred within the time horizon
+    # Keep the original event definition but ensure we're using the right logic
+    evaluate_coxph_quantile(model, df, time_horizon, quantiles = c(0.10, 0.25, 0.50, 0.75, 0.90))
   })
   
   # Stack all 10 imputations
@@ -172,10 +171,6 @@ for(i in 1:mi_dfs$m) {
   analytic_df <- df %>% 
     arrange(study,study_id,joint_id,age) %>% 
     group_by(study,study_id,joint_id) %>%
-    mutate(event = case_when(
-      newdm_event == 1 & (age == censored_age) ~ 1,  # event is 1 for the last wave
-      TRUE ~ 0 
-    )) %>%
     ungroup() 
   
   
@@ -194,6 +189,8 @@ for(i in 1:mi_dfs$m) {
     group_by(joint_id) %>%
     dplyr::slice_sample(n = 1) %>%
     ungroup() %>% 
+    # For random visit analysis, use the original newdm_event as the outcome (consistent with baseline)
+    mutate(event = newdm_event) %>%
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
@@ -244,13 +241,13 @@ for(i in 1:mi_dfs$m) {
 
 
 
-source("functions/evaluate_coxph02.R")
+source("functions/evaluate_coxph_quantile.R")
 
 model_names <- c("overall_coxph", "mard_coxph", "mod_coxph", "sidd_coxph", "sird_coxph")
 pooled_results <- setNames(vector("list", length(model_names)), model_names)
 names(pooled_results) <- model_names
 
-time_horizon <- 5  # Example: 5-year risk
+time_horizon <- 8  # Use 8-year risk for random visit analysis (consistent with baseline)
 
 M <- length(coxph_dfs)
 
@@ -262,23 +259,15 @@ for (model_name in model_names) {
   
   pooled_metrics <- map2(seq_len(M), coxph_dfs, function(i, df) {
     model <- model_list[[i]]
-    # No need to recompute event here; your evaluator uses time_to_event + event
-    evaluate_coxph(model, df, time_horizon,
-                   cutpoints = c(0.10, 0.25, 0.50, 0.75, 0.90))
+    # Use the same quantile approach as baseline for consistency
+    evaluate_coxph_quantile(model, df, time_horizon, quantiles = c(0.10, 0.25, 0.50, 0.75, 0.90))
   })
   
-  pooled_df <- bind_rows(pooled_metrics, .id = "imputation") %>%
-    mutate(across(c(sensitivity, specificity, F1, c_index, cal_slope), as.numeric),
-           threshold = as.numeric(threshold))
-  
+  pooled_df <- bind_rows(pooled_metrics, .id = "imputation")
   pooled_summary <- pooled_df %>%
     group_by(threshold) %>%
-    summarise(
-      across(c(sensitivity, specificity, F1, c_index, cal_slope),
-             list(mean = ~mean(.x, na.rm = TRUE),
-                  sd   = ~sd(.x,   na.rm = TRUE))),
-      .groups = "drop"
-    )
+    summarise(across(c(sensitivity, specificity, F1, c_index, cal_slope), 
+                     list(mean = mean, sd = sd), na.rm = TRUE), .groups = "drop")
   
   pooled_results[[model_name]] <- pooled_summary
 }

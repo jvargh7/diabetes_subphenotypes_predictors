@@ -13,7 +13,7 @@ mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
   dplyr::filter(dpp_intervention == 1) %>% 
-  distinct(study,study_id,dpp_intervention) # n = 60
+  distinct(study,study_id,dpp_intervention) # n = 1,722
 
 
 coxph_dfs <- list()
@@ -45,10 +45,6 @@ for(i in 1:mi_dfs$m) {
   analytic_df <- df %>% 
     arrange(study,study_id,joint_id,age) %>% 
     group_by(study,study_id,joint_id) %>%
-    mutate(event = case_when(
-      newdm_event == 1 & (age == censored_age) ~ 1,  # event is 1 for the last wave
-      TRUE ~ 0 
-    )) %>%
     ungroup() 
   
   
@@ -64,6 +60,8 @@ for(i in 1:mi_dfs$m) {
   
   coxph_df <- cluster_df %>%
     dplyr::filter(age == earliest_age) %>% 
+    # For baseline analysis, use the original newdm_event as the outcome
+    mutate(event = newdm_event) %>%
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
@@ -165,10 +163,6 @@ for(i in 1:mi_dfs$m) {
   analytic_df <- df %>% 
     arrange(study,study_id,joint_id,age) %>% 
     group_by(study,study_id,joint_id) %>%
-    mutate(event = case_when(
-      newdm_event == 1 & (age == censored_age) ~ 1,  # event is 1 for the last wave
-      TRUE ~ 0 
-    )) %>%
     ungroup() 
   
   
@@ -187,6 +181,8 @@ for(i in 1:mi_dfs$m) {
     group_by(joint_id) %>%
     dplyr::slice_sample(n = 1) %>%
     ungroup() %>%
+    # For random visit analysis, use the original newdm_event as the outcome (consistent with baseline)
+    mutate(event = newdm_event) %>%
     mutate(across(c(bmi, hba1c, homa2b, homa2ir, ldlc, sbp, egfr_ckdepi_2021), ~replace(., is.infinite(.), NA))) %>% 
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
