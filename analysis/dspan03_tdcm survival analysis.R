@@ -7,11 +7,11 @@ library(ggsurvfit)
 library(broom)
 
 source("functions/egfr_ckdepi_2021.R")
-mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs_new.RDS"))
+mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc301_mi_dfs.RDS"))
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
   dplyr::filter(dpp_intervention == 1) %>% 
-  distinct(study,study_id,joint_id,dpp_intervention) # n = 60
+  distinct(study,study_id,joint_id,dpp_intervention) # n = 1,772
 
 
 # TDCM - longitudinal data, hazards time-varying, HR constant

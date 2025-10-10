@@ -8,10 +8,10 @@ library(broom)
 
 source("functions/egfr_ckdepi_2021.R")
 
-cardia_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/cardia mi_dfs.RDS"))
-dppos_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dppos mi_dfs.RDS"))
-jhs_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/jhs mi_dfs.RDS"))
-mesa_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mesa mi_dfs.RDS"))
+cardia_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc302_cardia_mi_dfs.RDS"))
+dppos_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc302_dppos_mi_dfs.RDS"))
+jhs_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc302_jhs_mi_dfs.RDS"))
+mesa_mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc302_mesa_mi_dfs.RDS"))
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
   dplyr::filter(dpp_intervention == 1) %>% 

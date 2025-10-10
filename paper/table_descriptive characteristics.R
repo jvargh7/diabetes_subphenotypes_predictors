@@ -52,7 +52,7 @@ table_df_lastfu <- read_csv("analysis/dspan04_predictors descriptive characteris
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS"))
 
-vars <- c("hba1c", "bmi", "homa2b", "homa2ir", "sbp", "sbp", "ldlc", "hdlc", 
+vars <- c("hba1c", "bmi", "homa2b", "homa2ir", "sbp", "dbp", "ldlc", "hdlc", 
           "insulinf","glucosef","egfr_ckdepi_2021","tgl")
 
 

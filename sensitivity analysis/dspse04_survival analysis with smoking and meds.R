@@ -7,11 +7,10 @@ library(ggsurvfit)
 library(broom)
 
 source("functions/egfr_ckdepi_2021.R")
-mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs_new.RDS"))
+mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc301_mi_dfs.RDS"))
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>%
-  select(study,study_id,joint_id,dpp_intervention,smoking,med_chol_use,med_bp_use,med_dep_use) %>% 
-  distinct(study,study_id,joint_id,dpp_intervention,.keep_all = TRUE) %>% 
+  select(joint_id,age,dpp_intervention,smoking,med_chol_use,med_bp_use,med_dep_use) %>% 
   mutate(dpp_intervention = case_when(
     dpp_intervention == 1 ~ 1,
     TRUE ~ 0
@@ -32,10 +31,8 @@ for(i in 1:mi_dfs$m) {
     mutate(egfr_ckdepi_2021 = egfr_ckdepi_2021(scr = serumcreatinine,female = female,age = age),
            time_to_event = censored_age - age) %>% 
     left_join(clean_df,
-              by = c("study","study_id","joint_id")) %>% 
-    mutate(dpp_intervention = case_when(dpp_intervention == 1 ~ 1,
-                                        TRUE ~ 0),
-           smoking = case_when(is.na(smoking) ~ "Never",
+              by = c("joint_id","age")) %>% 
+    mutate(smoking = case_when(is.na(smoking) ~ "Never",
                                TRUE ~ smoking),
            med_bp_use = case_when(is.na(med_bp_use) ~ 0,
                                   TRUE ~ med_bp_use),

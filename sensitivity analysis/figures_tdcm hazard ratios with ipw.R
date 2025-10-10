@@ -51,7 +51,7 @@ plot_forest <- ggplot(tdcm_coef, aes(y = term, x = estimate, xmin = lci, xmax = 
   geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
   geom_hline(yintercept = 0, linetype = "solid", color = "black") +
   scale_color_manual(values = cluster_all_colors) +
-  scale_x_continuous(limits = c(0, 12), breaks = seq(0, 12, by = 1)) +
+  scale_x_continuous(limits = c(0, 8), breaks = seq(0, 8, by = 1)) +
   labs(
     x = "Hazard ratio (95% CI)",
     y = NULL,

@@ -1,10 +1,6 @@
 rm(list=ls());gc();source("dsphyc3_config.R")
 
 
-
-
-
-
 analytic_df <- readRDS(paste0(path_dsp_hyperc3_folder,"/data/dspan01_analytic sample.RDS")) %>% 
   mutate(original_joint_id = paste(study, study_id, sep = "_"),   # for later restoration
          mice_id = as.integer(as.factor(paste(study, study_id, sep = "_"))))  # for multilevel mice
@@ -13,19 +9,25 @@ colnames(analytic_df)
 
 
 
+problem_vars <- c()
+
 # detect variables all NA for some people
 vars_to_check  <- c("age", "height","weight","bmi","wc","sbp", "dbp","hba1c", 
                     "ldlc","hdlc","glucosef","insulinf",
                     "tgl", "serumcreatinine","homa2b", "homa2ir")
 
-
-problem_vars <- c()
 for (var in vars_to_check) {
   n_all_na <- analytic_df %>%
     group_by(mice_id) %>%
     summarise(all_na = all(is.na(.data[[var]]))) %>%
+    # summarise(all_na = all(is.na(.[,var])) %>%
     dplyr::filter(all_na) %>%
     nrow()
+  
+  if(n_all_na > 0){
+    problem_vars = c(problem_vars,var)
+  }
+  
 }
 
 print(problem_vars)
@@ -45,6 +47,7 @@ id_vars <- c("study_id", "study", "mice_id","original_joint_id","cluster_study_i
              "female", "race")
 
 
+library(mice)
 
 before_imputation <- analytic_df  %>% 
   dplyr::select(
@@ -73,7 +76,7 @@ pred[c("homa2b","homa2ir"),c("insulinf","glucosef")] <- 1
 
 
 # Initialize predictor matrix
-pred[,] <- 1  # Start by allowing all variables to predict each other
+# pred[,] <- 1  # Start by allowing all variables to predict each other
 
 # Clear ID variables from being predictors or outcomes
 pred[id_vars,] <- 0
@@ -94,21 +97,15 @@ if(all(c("homa2b", "homa2ir", "insulinf", "glucosef") %in% colnames(before_imput
 } 
 
 
-# Print predictor matrix for debugging
-print("Predictor Matrix:")
-print(pred)
-print("\nMethods:")
-print(method)
-
 mi_dfs <- mice(before_imputation,
                method = method,
                predictorMatrix = pred,
                m=10,maxit=50,seed=500)
 
 df <- complete(mi_dfs, action = 1)
-cat(paste0("Number of rows: "nrow(df)))
+cat(paste0("Number of rows: ",nrow(df)))
 
-saveRDS(mi_dfs, paste0(path_kup_hyperc3_folder,"/working/dsphyc301_mi_dfs.RDS"))
+saveRDS(mi_dfs, paste0(path_dsp_hyperc3_folder,"/working/dsphyc301_mi_dfs.RDS"))
 
 
 

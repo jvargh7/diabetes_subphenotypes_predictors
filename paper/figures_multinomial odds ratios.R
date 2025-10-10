@@ -54,7 +54,7 @@ plot_forest <- ggplot(multinom_all, aes(y = term, x = estimate, xmin = lci, xmax
   geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
   geom_hline(yintercept = 0, linetype = "solid", color = "black") +
   scale_color_manual(values = cluster_all_colors) +
-  scale_x_continuous(limits = c(0, 11), breaks = seq(0, 11, by = 1)) +
+  scale_x_continuous(limits = c(0, 16), breaks = seq(0, 16, by = 2)) +
   labs(
     x = "Odds ratio (95% CI)",
     y = NULL,
@@ -88,7 +88,7 @@ plot_forest_ref <- ggplot(multinom_ref, aes(y = term, x = estimate, xmin = lci, 
   geom_vline(xintercept = 1, linetype = "dashed", color = "darkgrey") +
   geom_hline(yintercept = 0, linetype = "solid", color = "black") +
   scale_color_manual(values = cluster_all_colors) +
-  scale_x_continuous(limits = c(0, 11), breaks = seq(0, 11, by = 1)) +
+  scale_x_continuous(limits = c(0, 16), breaks = seq(0, 16, by = 2)) +
   labs(
     x = "Odds ratio (95% CI)",
     y = NULL,

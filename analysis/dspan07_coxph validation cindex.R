@@ -9,7 +9,7 @@ library(purrr)
 
 source("functions/egfr_ckdepi_2021.R")
 
-mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mi_dfs_new.RDS"))
+mi_dfs <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dsphyc301_mi_dfs.RDS"))
 
 clean_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
   dplyr::filter(dpp_intervention == 1) %>% 
@@ -68,7 +68,12 @@ for(i in 1:mi_dfs$m) {
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
                             TRUE ~ race),
-           race = relevel(factor(race), ref = "NH White")) %>% 
+           race = relevel(factor(race), ref = "NH White"),
+           race3 = fct_collapse(race,
+                                "NH Black" = "NH Black",
+                                "Hispanic" = "Hispanic",
+                                "White/Other" = c("NH White","Other")),
+           race3 = relevel(race3, ref = "White/Other")) %>% 
     # scaling
     mutate(sbp_scaled = sbp/10,
            ldlc_scaled = ldlc/10,
@@ -77,14 +82,8 @@ for(i in 1:mi_dfs$m) {
     mutate(subtype = case_when(is.na(cluster) ~ "NOT2D",
                                TRUE ~ cluster)) %>%
     mutate(subtype = factor(subtype, levels=c("NOT2D","MARD","MOD","SIDD","SIRD")),
-           study_cardia = case_when (study == "cardia" ~ 1,
-                                     TRUE ~ 0),
-           study_dppos = case_when(study == "dppos" ~ 1,
-                                   TRUE ~ 0),
-           study_jhs = case_when(study == "jhs" ~ 1,
-                                 TRUE ~ 0),
-           study_mesa= case_when(study == "mesa" ~ 1,
-                                 TRUE ~ 0))
+           # 1 if in DPPOS intervention arm, else 0 (also 0 for all non-DPPOS rows)
+           dppos_interv = as.numeric(study == "dppos") * as.numeric(dpp_intervention))
   
   coxph_dfs[[i]] <- coxph_df
   
@@ -116,15 +115,14 @@ for(i in 1:mi_dfs$m) {
                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
                           data = train_df)
   
-  sidd_coxph[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
-                           data = train_df)
+  sidd_coxph[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + female + race3 + earliest_age + bmi + hba1c + homa2b_scaled 
+                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + ridge(dpp_intervention, theta = 100),
+                           data = train_df, ties = "efron", control = coxph.control(iter.max = 100))
   
   # CARDIA has 0 people from SIRD
-  # sird_coxph uses study-specific dummies
-  sird_coxph[[i]] <- coxph(Surv(time_to_event, sird) ~ study_dppos + study_jhs + study_cardia + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                           data = train_df)
+  sird_coxph[[i]] <- coxph(Surv(time_to_event, sird) ~ strata(study) + female + race3 + earliest_age + bmi + hba1c + homa2b_scaled 
+                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + ridge(dppos_interv, theta = 50), 
+                           data = train_df, ties = "efron", control = coxph.control(iter.max = 200, eps = 1e-09))
   
 }
 
@@ -149,7 +147,7 @@ write.csv(validation_results, "analysis/dspan07_coxph validation cindex.csv", ro
 
 ###################### RANDOM VISIT ############################
 
-set.seed(123)
+set.seed(42)
 
 for(i in 1:mi_dfs$m) {
   df <- complete(mi_dfs, action = i) %>% 
@@ -193,7 +191,12 @@ for(i in 1:mi_dfs$m) {
     # error due to 0 ppl in NH Other (sidd == 1), ignore this category
     mutate(race = case_when(race == "NH Other" ~ "Other", 
                             TRUE ~ race),
-           race = relevel(factor(race), ref = "NH White")) %>% 
+           race = relevel(factor(race), ref = "NH White"),
+           race3 = fct_collapse(race,
+                                "NH Black" = "NH Black",
+                                "Hispanic" = "Hispanic",
+                                "White/Other" = c("NH White","Other")),
+           race3 = relevel(race3, ref = "White/Other")) %>% 
     # scaling
     mutate(sbp_scaled = sbp/10,
            ldlc_scaled = ldlc/10,
@@ -202,14 +205,8 @@ for(i in 1:mi_dfs$m) {
     mutate(subtype = case_when(is.na(cluster) ~ "NOT2D",
                                TRUE ~ cluster)) %>%
     mutate(subtype = factor(subtype, levels=c("NOT2D","MARD","MOD","SIDD","SIRD")),
-           study_cardia = case_when (study == "cardia" ~ 1,
-                                     TRUE ~ 0),
-           study_dppos = case_when(study == "dppos" ~ 1,
-                                   TRUE ~ 0),
-           study_jhs = case_when(study == "jhs" ~ 1,
-                                 TRUE ~ 0),
-           study_mesa= case_when(study == "mesa" ~ 1,
-                                 TRUE ~ 0))
+           # 1 if in DPPOS intervention arm, else 0 (also 0 for all non-DPPOS rows)
+           dppos_interv = as.numeric(study == "dppos") * as.numeric(dpp_intervention))
   
   coxph_dfs[[i]] <- coxph_df
   
@@ -241,15 +238,14 @@ for(i in 1:mi_dfs$m) {
                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
                           data = train_df)
   
-  sidd_coxph[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + dpp_intervention, 
-                           data = train_df)
+  sidd_coxph[[i]] <- coxph(Surv(time_to_event, sidd) ~ study + female + race3 + earliest_age + bmi + hba1c + homa2b_scaled 
+                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + ridge(dpp_intervention, theta = 100),
+                           data = train_df, ties = "efron", control = coxph.control(iter.max = 100))
   
   # CARDIA has 0 people from SIRD
-  # sird_coxph uses study-specific dummies
-  sird_coxph[[i]] <- coxph(Surv(time_to_event, sird) ~ study_dppos + study_jhs + study_cardia + female + race + earliest_age + bmi + hba1c + homa2b_scaled 
-                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled, 
-                           data = train_df)
+  sird_coxph[[i]] <- coxph(Surv(time_to_event, sird) ~ strata(study) + female + race3 + earliest_age + bmi + hba1c + homa2b_scaled 
+                           + homa2ir + ldlc_scaled + sbp_scaled + egfr_ckdepi_2021_scaled + ridge(dppos_interv, theta = 50), 
+                           data = train_df, ties = "efron", control = coxph.control(iter.max = 200, eps = 1e-09))
   
 }
 

@@ -22,8 +22,14 @@ for (var in vars_to_check) {
   n_all_na <- analytic_df %>%
     group_by(mice_id) %>%
     summarise(all_na = all(is.na(.data[[var]]))) %>%
+    # summarise(all_na = all(is.na(.[,var])) %>%
     dplyr::filter(all_na) %>%
     nrow()
+  
+  if(n_all_na > 0){
+    problem_vars = c(problem_vars,var)
+  }
+  
 }
 
 print(problem_vars)
@@ -73,7 +79,7 @@ pred[c("homa2b","homa2ir"),c("insulinf","glucosef")] <- 1
 
 
 # Initialize predictor matrix
-pred[,] <- 1  # Start by allowing all variables to predict each other
+# pred[,] <- 1  # Start by allowing all variables to predict each other
 
 # Clear ID variables from being predictors or outcomes
 pred[id_vars,] <- 0

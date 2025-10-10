@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=dsphyc301
+#SBATCH --job-name=dsphyc302
 #SBATCH --account=general
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=4
@@ -24,7 +24,7 @@ R --version
 # Run a minimal R command first to test R functionality
 R -e 'cat("R is working properly\n")'
 
-R_SCRIPT=/users/jguo258/projects/dsp-hyperc3/code/dsphyc301_imputation.R
+R_SCRIPT=/users/jguo258/projects/dsp-hyperc3/code/dsphyc302_imputation_by_cohort.R
 
 # Record start time
 START_TIME=$(date +%s)

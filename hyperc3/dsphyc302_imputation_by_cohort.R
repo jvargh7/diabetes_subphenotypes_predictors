@@ -1,18 +1,16 @@
-rm(list = ls());gc();source(".Rprofile")
+rm(list=ls());gc();source("dsphyc3_config.R")
 
-
-analytic_df <- readRDS(paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dspan01_analytic sample.RDS")) %>% 
-  select(-joint_id) %>% 
+analytic_df <- readRDS(paste0(path_dsp_hyperc3_folder,"/data/dspan01_analytic sample.RDS")) %>% 
   mutate(original_joint_id = paste(study, study_id, sep = "_"),   # for later restoration
-         mice_id = as.integer(as.factor(paste(study, study_id, sep = "_"))))  # for multilevel mice 
+         mice_id = as.integer(as.factor(paste(study, study_id, sep = "_"))))  # for multilevel mice
 
 colnames(analytic_df)
 
 
 # detect variables all NA for some people
 vars_to_check  <- c("age", "height","weight","bmi","wc","sbp", "dbp","hba1c", 
-                     "ldlc","hdlc","glucosef","insulinf",
-                     "tgl", "serumcreatinine","homa2b", "homa2ir")
+                    "ldlc","hdlc","glucosef","insulinf","glucose2h",
+                    "tgl", "serumcreatinine","homa2b", "homa2ir")
 
 
 problem_vars <- c()
@@ -28,7 +26,7 @@ print(problem_vars)
 
 
 
-multilevel_vars <- c("age", "height","bmi","sbp", "dbp","hba1c")
+multilevel_vars <- c("age", "height", "bmi","sbp", "dbp","hba1c")
 
 # proportion_vars <- c("female")
 # 
@@ -51,6 +49,7 @@ before_imputation <- analytic_df  %>%
     # any_of(proportion_vars),
     # any_of(grouped_vars)
   ) 
+
 
 impute_study <- function(study_name) {
   df_sub <- before_imputation %>% dplyr::filter(study == study_name)
@@ -99,9 +98,14 @@ dppos_mi_dfs  <- impute_study("dppos")
 jhs_mi_dfs    <- impute_study("jhs")
 mesa_mi_dfs   <- impute_study("mesa")
 
-#df <- complete(mi_dfs, action = 1)
 
-saveRDS(cardia_mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/cardia mi_dfs.RDS"))
-saveRDS(dppos_mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/dppos mi_dfs.RDS"))
-saveRDS(jhs_mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/jhs mi_dfs.RDS"))
-saveRDS(mesa_mi_dfs, paste0(path_diabetes_subphenotypes_predictors_folder,"/working/processed/mesa mi_dfs.RDS"))
+saveRDS(cardia_mi_dfs, paste0(path_dsp_hyperc3_folder,"/working/dsphyc302_cardia_mi_dfs.RDS"))
+saveRDS(dppos_mi_dfs, paste0(path_dsp_hyperc3_folder,"/working/dsphyc302_dppos_mi_dfs.RDS"))
+saveRDS(jhs_mi_dfs, paste0(path_dsp_hyperc3_folder,"/working/dsphyc302_jhs_mi_dfs.RDS"))
+saveRDS(mesa_mi_dfs, paste0(path_dsp_hyperc3_folder,"/working/dsphyc302_mesa_mi_dfs.RDS"))
+
+
+
+
+print("Imputation completed")
+
