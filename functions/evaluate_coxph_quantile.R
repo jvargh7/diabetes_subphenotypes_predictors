@@ -77,5 +77,9 @@ evaluate_coxph_quantile <- function(model, data, time_horizon, quantiles = c(0.1
   results$c_index <- cidx
   results$cal_slope <- cal_slope
   
+  # Print the structure of the results to debug
+  print("Column names in results:")
+  print(names(results))
+  
   return(results)
 }

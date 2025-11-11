@@ -274,15 +274,17 @@ time_horizon <- 8  # Use 8-year risk for random visit analysis (consistent with 
 M <- length(coxph_dfs)
 
 for (model_name in model_names) {
-  pooled_metrics <- map2(1:10, coxph_dfs, function(i, df) {
-    model_list <- get(model_name)
+  model_list <- get(model_name, inherits = TRUE)
+  if (!is.list(model_list) || length(model_list) != M) {
+    stop(sprintf("`%s` must be a list of %d models (one per imputation).", model_name, M))
+  }
+  
+  pooled_metrics <- map2(seq_len(M), coxph_dfs, function(i, df) {
     model <- model_list[[i]]
-    # For baseline analysis, the event is whether diabetes occurred within the time horizon
-    # Keep the original event definition but ensure we're using the right logic
+    # Use the same quantile approach as baseline for consistency
     evaluate_coxph_quantile(model, df, time_horizon, quantiles = c(0.10, 0.25, 0.50, 0.75, 0.90))
   })
   
-  # Stack all 10 imputations
   pooled_df <- bind_rows(pooled_metrics, .id = "imputation")
   pooled_summary <- pooled_df %>%
     group_by(threshold) %>%
@@ -303,6 +305,5 @@ pooled_long <- purrr::imap_dfr(pooled_results, ~mutate(.x, model = .y)) %>%
     cal_slope   = sprintf("%.3f (%.3f)", cal_slope_mean, cal_slope_sd)
   ) %>%
   select(model, threshold, threshold_value, sensitivity, specificity, f1, c_index, cal_slope)
-
 
 write.csv(pooled_long, "analysis/dspan06_pooled coxph model metrics random visit.csv", row.names = FALSE)
