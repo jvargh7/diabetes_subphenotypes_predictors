@@ -19,7 +19,7 @@ p_not2d <- ggplot(df_not2d, aes(x = earliest_age, y = censored_age)) +
   labs(
     title = "NOT2D",
     x = NULL,
-    y = "Age at Last Visit/T2D Diagnosis"
+    y = "Age at Last Visit/T2D Diagnosis (years)"
   ) +
   xlim(20, 100) +
   ylim(20, 100) +
@@ -112,7 +112,7 @@ p_sird <- ggplot(df_sird, aes(x = earliest_age, y = censored_age)) +
 # Combine all 5 plots into a single 5-column figure
 combined_plot <- (p_not2d | p_mard | p_mod | p_sidd | p_sird) +
   plot_layout(guides = "collect") +
-  plot_annotation(caption = "Age at First Selected Visit") &
+  plot_annotation(caption = "Age at First Selected Visit (years)") &
   theme(plot.caption = element_text(hjust = 0.5, size = 11, face = "bold", margin = margin(t = 10)))
 
 
