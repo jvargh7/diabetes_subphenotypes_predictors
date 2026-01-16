@@ -8,7 +8,7 @@ lab_cutoff <- c(0:365)
 
 if(Sys.info()["user"] == "JVARGH7"){
   path_diabetes_subphenotypes_youth_folder <- "C:/Cloud/OneDrive - Emory University/Papers/Subphenotypes in Youth-onset T2DM"
-  path_diabetes_subphenotypes_adults_folder <- "C:/Cloud/Emory University/li, zhongyu - Diabetes Endotypes Project (JV and ZL)"
+  path_diabetes_subphenotypes_adults_folder <- "C:/Cloud/Emory/li, zhongyu - Diabetes Endotypes Project (JV and ZL)"
   cluster_labels = c("MOD","SIRD","MARD","SIDD")
   cluster_colors = c("MOD"="#F8BDA4","SIRD"="#A1C3AC","SIDD"="#ACD9EA","MARD"="#D0ACC9")
   cluster_colors_cosmos = c("MOD"="#F8BDA4","SIRD"="darkgreen","SIDD"="#4682b4","MARD"="#D0ACC9")
